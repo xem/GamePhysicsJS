@@ -1,6 +1,13 @@
 ﻿<title>Game Physics in a weekend</title>
 <h1>Game Physics in a weekend</h1>
-<h2>Vectors</h2>
+
+
+
+<h2>1. Overview</h2>
+
+
+
+<h2>2. Vectors</h2>
 <p>→ Source code: <a href="../engine/vec.js">vec.js</a>
 <p>Vectors are 1D arrays containing 2, 3 or 4 numbers, called components.
 <br>They either represent a signed displacement (direction + magnitude) or a point in space.
@@ -10,7 +17,9 @@ v3 = new DOMPoint(x, y, z);     // 3D
 v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</code>
 <p>Methods added: add, sub, mul (component-wise multiplication), scale, dot (dot product), cross (cross product), norm (normalize), mag (magnitude)
 
-<h2>Matrices</h2>
+
+
+<h2>3. Matrices</h2>
 <p>Matrices are 2D grids of numbers (2x2, 3x3 or 4x4) representing linear transformations.
 <br>This JS implementation will represent matrices with <a href="https://developer.mozilla.org/en-US/docs/Web/API/DOMMatrix">DOMMatrix</a>.
 <p><code>m = new DOMMatrix([
@@ -19,19 +28,37 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
   m31, m32, m33, m34,
   m41, m42, m43, m44
 ]);</code>
-<p>Useful native methods: multiply, inverse, translate, scale, rotate, rotateAxisAngle, transformPoint... (warning: transpose is not available natively)
+<p>Useful native methods: multiply, inverse, translate, scale, rotate, rotateAxisAngle, transformPoint...
+<br>(warning: transpose is not available natively)
 
-<h2>Quaternions</h2>
-<p>→ Source code: <a href="../engine/quat.js">quat.js</a>
-<p>Quaternions are more useful than matrices to represent rotations.
-<p>They contain four components x, y, z, w (representing a rotation axis and an angle), and will also be implemented with DOMPoint.
-<p>Methods added: inverse, mag, mags (magnitude squared), rotatePoint, rotateMatrix, mat (transform into a matrix).
+
+
+<h2>4. Quaternions</h2>
+<!--<p>→ Source code: <a href="../engine/quat.js">quat.js</a>-->
+<p>Quaternions are often used to represent rotations.
+<br>They contain four components x, y, z, w (representing a rotation axis and an angle).
+<!--, and will also be implemented with DOMPoint.-->
+<br>To save space, this implementation will only use rotation matrices.
+<!--<br>Methods added: inverse, mag, mags (magnitude squared), rotatePoint, rotateMatrix, mat (transform into a matrix).-->
+
+
+
+<h2>5. Bodies and scene</h2>
+<p>→ Source code: <a href="../engine/body.js">body.js</a>, <a href="../engine/body.js">scene.js</a>
+<p>A physics simulation is a collection of (colliding) bodies stored in a scene.
+<br>A body has a position (vector), a center of mass (vector), an orientation (matrix) and a shape (only sphere for now).
+<br>To be animated, the scene will be re-rendered 60 times per second.
+<p><b>Demo</b>
+<p><iframe src=demo5.html width=640 height=410 frameborder=no></iframe>
+<p>World space coordinates are given along the global X, Y, Z axis.
+<br>Model space coordinates are relative to a model (like a sphere).
+<br>worldToBody and bodyToWorld methods are added in the class Body to easiy switch between the two spaces.
 
 
 <style>
 body { font: 15px calibri; padding: 10px; }
 h2 { margin: 30px 0 0 0; }
-code { display: inline-block; background: #def; padding: 10px; margin: 10px 0; font: bold 14px/22px courier; white-space: pre; position: relative;}
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0; font: bold 14px/22px courier; white-space: pre; position: relative;}
 .f { background: #fde; font-family: arial; }
 code:before { content: "JS code"; color: #abc; position: absolute; top: -17px; left: 0px; font-size: 10px; }
 code.f:before { content: "Formula"; color: #cab; }
