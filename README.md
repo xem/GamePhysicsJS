@@ -2,13 +2,13 @@
 
 Summary and tiny JS implementation of Gregory Hodges's [Game Physics books](https://gamephysicsweekend.github.io)
 
-## Summary
+## Book summary
 
-1) [https://xem.github.io/GamePhysicsJS/1/index.html](Book 1)
-2) [https://xem.github.io/GamePhysicsJS/2/index.html](Book 2)
-3) [https://xem.github.io/GamePhysicsJS/3/index.html](Book 3)
+- [The first week-end](https://xem.github.io/GamePhysicsJS/1/index.html)
+- [The next week](https://xem.github.io/GamePhysicsJS/2/index.html)
+- [the rest of your life](https://xem.github.io/GamePhysicsJS/3/index.html)
 
-(The demos are rendered with a modified version of my WebGL framework, W.js)
+The included demos are rendered with a modified version of my WebGL framework, [W.js](https://xem.github.io/W)
 
 ## implementation
 
