@@ -4,9 +4,9 @@ Summary and tiny JS implementation of Gregory Hodges's [Game Physics books](http
 
 ## Summary
 
-1) [https://xem.github.io/GamePhysicsJS/1/index.html](Game Physics in one weekend)
-2) [https://xem.github.io/GamePhysicsJS/2/index.html](Game Physics, the next week)
-3) [https://xem.github.io/GamePhysicsJS/3/index.html](Game Physics, the rest of your life)
+1) [https://xem.github.io/GamePhysicsJS/1/index.html](Book 1)
+2) [https://xem.github.io/GamePhysicsJS/2/index.html](Book 2)
+3) [https://xem.github.io/GamePhysicsJS/3/index.html](Book 3)
 
 (The demos are rendered with a modified version of my WebGL framework, W.js)
 
