@@ -10,11 +10,11 @@ Summary and tiny JS implementation of Gregory Hodges's [Game Physics books](http
 
 ## Renderer
 
-The summary's demos are rendered with a small fork of [W.js](https://xem.github.io/W) located in the [renderer folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/renderer
+The summary's demos are rendered with a small fork of [W.js](https://xem.github.io/W) located in the [renderer folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/renderer) (TODO)
 
 ## Physics Engine
 
-The physics engine's code is located in the [src folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/engine)
+The physics engine's code is located in the [src folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/engine) (WIP)
 
 ## API
 
