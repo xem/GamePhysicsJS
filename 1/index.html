@@ -5,6 +5,7 @@
 
 <h2>1. Overview</h2>
 
+<p>Summary and tiny JS implementation of the book <a href="https://gamephysicsweekend.github.io">Game Physics: In One Weekend</a> by Gregory Hodges.
 
 
 <h2>2. Vectors</h2>
@@ -46,8 +47,8 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <h2>5. Bodies and scene</h2>
 <p>→ Source code: <a href="../engine/body.js">body.js</a>, <a href="../engine/body.js">scene.js</a>
 <p>A physics simulation is a collection of (colliding) bodies stored in a scene.
-<br>A body has a position (vector), a center of mass (vector), an orientation (matrix) and a shape (only sphere for now).
-<br>To be animated, the scene will be re-rendered 60 times per second.
+<br>A Body has a position (vector), a center of mass (vector), an orientation (matrix) and a shape (only sphere for now).
+<br>To be animated, the Scene will be re-rendered 60 times per second.
 <p><b>Demo</b>
 <p><iframe src=demo5.html width=640 height=410 frameborder=no></iframe>
 <p>World space coordinates are given along the global X, Y, Z axis.
@@ -55,12 +56,18 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <br>worldToBody and bodyToWorld methods are added in the class Body to easiy switch between the two spaces.
 
 
+<h2>6. Gravity</h2>
+<p>Objects move when a force is applied to them. Gravity is a constant downwards force.
+<br>After each fraction of time elapsed (dt):
+<br> - the change in velocity (dv) is computed from the accelerations (a) using the equation <b>dv = a x dt</b>.
+<br>- the change of position (dx) is computed from the velocity (v) using the equation <b>dx = v * dt</b>.
+<br>A linear velocity property is added to the class body.
+
 <style>
 body { font: 15px calibri; padding: 10px; }
 h2 { margin: 30px 0 0 0; }
 code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0; font: bold 14px/22px courier; white-space: pre; position: relative;}
 .f { background: #fde; font-family: arial; }
-code:before { content: "JS code"; color: #abc; position: absolute; top: -17px; left: 0px; font-size: 10px; }
 code.f:before { content: "Formula"; color: #cab; }
 p { padding: 0 0 0 10px }
 code b.sqrt { border-top: 1px solid; }

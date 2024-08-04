@@ -1,9 +1,10 @@
 ﻿class Body {
   
-  s; // shape (0: NONE, 1: SPHERE, ...)
-  p; // position (DOMPoint, in world space)
-  o; // orientation (DOMMatrix)
-  c; // center of mass (DOMPoint, in model space)
+  s;  // shape (0: NONE, 1: SPHERE, ...)
+  p;  // position (DOMPoint, in world space)
+  o;  // orientation (DOMMatrix)
+  c;  // center of mass (DOMPoint, in model space)
+  lr; // linear velocity (DOMPoint)
   
   constructor(s = 0, p = new DOMPoint, o = new DOMMatrix, c = new DOMPoint){
     this.s = s;

@@ -5,9 +5,9 @@ Summary and tiny JS implementation of Gregory Hodges's [Game Physics books](http
 
 ## Book summary
 
-- [The first week-end](https://xem.github.io/GamePhysicsJS/1/index.html) (WIP)
-- [The next week](https://xem.github.io/GamePhysicsJS/2/index.html) (TODO)
-- [the rest of your life](https://xem.github.io/GamePhysicsJS/3/index.html) (TODO)
+- [Game Physics: In One Wekend](https://xem.github.io/GamePhysicsJS/1/index.html) (WIP)
+- [Game Physics: The Next Week](https://xem.github.io/GamePhysicsJS/2/index.html) (TODO)
+- [Game Physics: the Rest Of Your Life](https://xem.github.io/GamePhysicsJS/3/index.html) (TODO)
 
 
 
