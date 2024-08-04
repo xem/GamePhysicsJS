@@ -4,15 +4,17 @@ Summary and tiny JS implementation of Gregory Hodges's [Game Physics books](http
 
 ## Book summary
 
-- [The first week-end](https://xem.github.io/GamePhysicsJS/1/index.html)
-- [The next week](https://xem.github.io/GamePhysicsJS/2/index.html)
-- [the rest of your life](https://xem.github.io/GamePhysicsJS/3/index.html)
+- [The first week-end](https://xem.github.io/GamePhysicsJS/1/index.html) (WIP)
+- [The next week](https://xem.github.io/GamePhysicsJS/2/index.html) (TODO)
+- [the rest of your life](https://xem.github.io/GamePhysicsJS/3/index.html) (TODO)
 
-The included demos are rendered with a modified version of my WebGL framework, [W.js](https://xem.github.io/W), located in the [W folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/src)
+## Renderer
 
-## implementation
+The summary's demos are rendered with a small fork of [W.js](https://xem.github.io/W) located in the [renderer folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/renderer
 
-See the [src folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/src)
+## Physics Engine
+
+The physics engine's code is located in the [src folder](https://github.com/xem/GamePhysicsJS/tree/gh-pages/engine)
 
 ## API
 

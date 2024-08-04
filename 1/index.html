@@ -1,7 +1,7 @@
 ﻿<title>Game Physics in a weekend</title>
 <h1>Game Physics in a weekend</h1>
 <h2>Vectors</h2>
-<p>→ Source code: <a href="../src/vec.js">vec.js</a>
+<p>→ Source code: <a href="../engine/vec.js">vec.js</a>
 <p>Vectors are 1D arrays containing 2, 3 or 4 numbers, called components.
 <br>They either represent a signed displacement (direction + magnitude) or a point in space.
 <br>This JS implementation will represent vectors with <a href="https://developer.mozilla.org/en-US/docs/Web/API/DOMPoint">DOMPoint</a>.
@@ -22,7 +22,7 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <p>Useful native methods: multiply, inverse, translate, scale, rotate, rotateAxisAngle, transformPoint... (warning: transpose is not available natively)
 
 <h2>Quaternions</h2>
-<p>→ Source code: <a href="../src/quat.js">quat.js</a>
+<p>→ Source code: <a href="../engine/quat.js">quat.js</a>
 <p>Quaternions are more useful than matrices to represent rotations.
 <p>They contain four components x, y, z, w (representing a rotation axis and an angle), and will also be implemented with DOMPoint.
 <p>Methods added: inverse, mag, mags (magnitude squared), rotatePoint, rotateMatrix, mat (transform into a matrix).
