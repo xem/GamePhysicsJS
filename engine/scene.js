@@ -31,7 +31,7 @@ Scene = {
     }
   },
   
-  // Rendering (exampe of implementation in renderer/render.js)
+  // Render (optional implementation in renderer/render.js)
   render: () => {},
   updateRender : () => {} 
 

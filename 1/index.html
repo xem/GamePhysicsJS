@@ -68,7 +68,7 @@ cross = (u, v) => new DOMPoint(
 <h2>4. Quaternions</h2>
 <p>Quaternions are often used to represent rotations.
 <br>They contain four components x, y, z, w (representing a rotation axis and an angle).
-<br>To save space, this implementation will skip quaternions and use rotation matrices.
+<br>To save space, the current JS implementation will skip quaternions and use rotation matrices.
 
 
 <h2>5. Bodies and scene</h2>
@@ -112,12 +112,14 @@ Scene = {
   // Update
   update: (dt) => { /* ... */ },
   
-  // Rendering
+  // Render
   render: () => { /* ... */ }
 }</code>
 <p><b>Demo</b>
 <p><iframe src=demo5.html width=640 height=410 frameborder=no></iframe>
-<p><b>Spaces</b>
+<br>
+<br>
+<p><b>World space vs. model space</b>
 <p>World space coordinates are given along the global X, Y and Z axis.
 <br>(NB: in WebGL, contrary to the book, the +Y axis is up and the +Z axis is to the front.)
 <br>Model space coordinates are relative to a model (ex: a sphere).
@@ -148,17 +150,74 @@ modelToWorld(p) {
 <h2>6. Gravity</h2>
 <p>Objects move when a force is applied to them. Gravity is a constant downwards force (rounded to 10m/s²).
 <br>After each fraction of time elapsed (dt):
-<br> - the change in velocity (dv) is computed from the accelerations (a) using the equation <b>dv = a x dt</b>.
+<br> - the change in velocity (dv) is computed from the acceleration (a) using the equation <b>dv = a * dt</b>.
 <br>- the change of position (dx) is computed from the velocity (v) using the equation <b>dx = v * dt</b>.
 <br>A linear velocity property lv (vector) is added to the class body.
-
-
+<p><code class=f>class Body {
+  
+  // ...
+  
+  lv; // linear velocity
+  
+  constructor(params){
+    
+    // ...
+    
+    this.lv = params.lv ?? new DOMPoint;
+  }
+}</code>
 
 <h2>7. Gravity, masses and impulses</h2>
 <p>The engine will treat acceleraion forces (like gravity) as impulses (momentum changes).
-<br><b>dv = J / m</b> where J is the impulse and m is the mass.
-<br>The im (inverseMass) property and the applyImpulseLinear method are added to the Body class.
+<br>The change of velocity is proportional to the impulse force and invesely proportional to the mass (dv = J / m).
+<br>To implement this, the im (inverseMass) property and the applyImpulseLinear method are added to the Body class.
+<br>Scene.update is completed, scene.updateRender is added.
 <br>Immovable objects are represented with an infinite mass (im = 0).
+<p><code class=f><b>// Body</b>
+
+class Body {
+  
+  // ...
+  
+  im; // inverse mass (0 = immovable)
+  
+  constructor(params){
+    
+    // ...
+    
+    this.im = params.im ?? 1;
+  }
+  
+  // ...
+  
+  applyImpulseLinear(i) {
+    if(this.im){
+      this.lv = add(this.lv, scale(i, this.im));
+    }
+  }
+}
+
+<b>// Scene</b>
+
+// Compute celocity and position of each sphere
+
+Scene.update = dt => {
+  var i;
+
+  // Apply gravity as an impulse
+  for(var i of Scene.b){     
+    i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
+  }
+  
+  // Update position
+  for(i of Scene.b){
+    i.p = add(i.p, scale(i.lv, dt));
+  }
+}
+
+// update the positions of each sphere in the scene (see renderer/render.js)
+
+Scene.updateRender : () => { /* ... */ } </code>
 <p><b>Demo</b>
 <p><iframe src=demo7.html width=640 height=620 frameborder=no></iframe>
 
@@ -169,7 +228,7 @@ modelToWorld(p) {
 <p>Two spheres collide if the sum of their radii is smaller than the distance between their center positions.
 <br>A little optimization: finding a distance requires a square root, which is expensive for the CPU, so we prefer comparing the square of the distance to the square of the sum of radii.
 <br>In the Scene's update function, we check collisions between every pair of spheres, and skip the cases where both are immovable.
-<br>When an intersection is found, the spheres velocity is set to 0, for now.
+<br>When an intersection is found, the spheres velocity is set to 0 (for now).
 <br>But we can see it's not ideal: the spheres are interpenetrating.
 <p><b>Demo</b>
 <p><iframe src=demo8.html width=640 height=410 frameborder=no></iframe>

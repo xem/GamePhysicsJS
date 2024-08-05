@@ -9,8 +9,8 @@ class Body {
   o;  // orientation (DOMMatrix)
   c;  // center of mass (DOMPoint, in model space)
   im; // inverse mass (0 = immovable)
-  e;  // elasticity
   lv; // linear velocity
+  e;  // elasticity
   
   constructor(params){
     this.id = params.id ?? "b" + (scene.b.length);
@@ -19,8 +19,8 @@ class Body {
     this.o = params.o ?? new DOMMatrix;
     this.c = params.c ?? new DOMPoint;
     this.im = params.im ?? 1;
-    this.e = params.e ?? 1;
     this.lv = params.lv ?? new DOMPoint;
+    this.e = params.e ?? 1;
   }
   
   // Center of mass in world space
