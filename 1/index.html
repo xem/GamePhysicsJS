@@ -47,13 +47,16 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <h2>5. Bodies and scene</h2>
 <p>→ Source code: <a href="../engine/body.js">body.js</a>, <a href="../engine/body.js">scene.js</a>
 <p>A physics simulation is a collection of (colliding) bodies stored in a scene.
-<br>A Body has a position (vector), a center of mass (vector), an orientation (matrix) and a shape (only sphere for now).
-<br>To be animated, the Scene will be re-rendered 60 times per second.
+<br>A Body has a position p (vector), a center of mass m (vector), an orientation o (matrix) and a shape constant s (1: sphere, 2: box).
+<br>A Sphere is an object extending Body with a radius (r) property.
+<br>The Scene contains a collection of bodies (b) and two methods: update and render.
 <p><b>Demo</b>
 <p><iframe src=demo5.html width=640 height=410 frameborder=no></iframe>
 <p>World space coordinates are given along the global X, Y, Z axis.
-<br>Model space coordinates are relative to a model (like a sphere).
-<br>worldToBody and bodyToWorld methods are added in the class Body to easiy switch between the two spaces.
+<br>Model space coordinates are relative to a model (ex: a sphere).
+<br>worldToBody and bodyToWorld methods are added in the class Body to easily convert a point's coordinates between the two spaces.
+
+
 
 
 <h2>6. Gravity</h2>
@@ -61,7 +64,41 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <br>After each fraction of time elapsed (dt):
 <br> - the change in velocity (dv) is computed from the accelerations (a) using the equation <b>dv = a x dt</b>.
 <br>- the change of position (dx) is computed from the velocity (v) using the equation <b>dx = v * dt</b>.
-<br>A linear velocity property is added to the class body.
+<br>A linear velocity property lv (vector) is added to the class body.
+
+
+
+<h2>7. Gravity, masses and impulses</h2>
+<p>The engine will treat acceleraion forces (like gravity) as impulses (momentum changes).
+<br><b>dv = J / m</b> where J is the impulse and m is the mass.
+<br>The im (inverseMass) property and the applyImpulseLinear method are added to the Body class.
+<br>Immovable objects are represented with an infinite mass (im = 0).
+<p><b>Demo</b>
+<p><iframe src=demo7.html width=640 height=660 frameborder=no></iframe>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <style>
 body { font: 15px calibri; padding: 10px; }

@@ -1,15 +1,20 @@
 ﻿class Body {
   
+  id; // name
   s;  // shape (0: NONE, 1: SPHERE, ...)
   p;  // position (DOMPoint, in world space)
   o;  // orientation (DOMMatrix)
   c;  // center of mass (DOMPoint, in model space)
-  lr; // linear velocity (DOMPoint)
+  lv = new DOMPoint; // linear velocity
+  im; // inverse mass (0 = immovable)
   
-  constructor(s = 0, p = new DOMPoint, o = new DOMMatrix, c = new DOMPoint){
+  constructor(id, s = 0, p = new DOMPoint, o = new DOMMatrix, im = 1, c = new DOMPoint){
+    this.id = id;
     this.s = s;
     this.p = p;
     this.o = o;
+    this.c = c;
+    this.im = im;
   }
   
   // Center of mass in world space
@@ -30,14 +35,21 @@
     return add(this.cWorld(), this.o.transformPoint(p));
   }
   
+  applyImpulseLinear(i) {
+    if(this.im){
+      this.lv = add(this.lv, scale(i, this.im));
+    }
+  }
+  
 }
 
 class Sphere extends Body {
   
   r; // radius
   
-  constructor(p, o, r = 1){
-    super(1, p, o);
+  constructor(id, p, o, im, r = 1){
+    console.log(id);
+    super(id, 1, p, o, im);
     this.r = r;
   }
   

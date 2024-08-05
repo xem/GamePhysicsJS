@@ -7,19 +7,25 @@ Scene = {
   // Update
   update: dt => {
     
-      // Update linear velocity with gravity (~10 m/s²)
+      // For each body
       for(var i of Scene.b){
-        i.lv = add(i.lv, scale(new DOMPoint(0,-10,0), dt));
+       
+        // Apply gravity as an impulse
+        i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
       }
       
-      // Update position with linear velocity
+      // For each body
       for(i of Scene.b){
-        i.p = add(i.p, scale(i.lr, dt));
+        
+        // Update position
+        //console.log(i.p, i.lv, dt);
+        i.p = add(i.p, scale(i.lv, dt));
       }
       
   },
   
-  // Render
-  render: () => {} // implemented in renderer/render.js (optional)
+  // Rendering (exampe of implementation in renderer/render.js)
+  render: () => {},
+  updateRender : () => {} 
 
 }

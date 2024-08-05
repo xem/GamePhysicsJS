@@ -1,0 +1,47 @@
+﻿<script src="../engine/vec.js"></script>
+<script src="../engine/quat.js"></script>
+<script src="../engine/body.js"></script>
+<script src="../engine/scene.js"></script>
+<script src="../renderer/render.js"></script>
+<script src="../renderer/w.js"></script>
+
+<button id=play>PLAY</button> <button onclick=location=location>RESET</button>
+<canvas id=canvas width=600 height=400></canvas>
+
+<script>
+// Ball
+Scene.b.push(new Sphere(
+  "ball",                 // id
+  new DOMPoint(0,4,0),    // position
+  new DOMPoint(0,0,0,0),  // orientation
+  1,                      // inverse mass
+  1,                      // radius
+));
+
+// Ground
+Scene.b.push(new Sphere(
+  "ground",                 // id    
+  new DOMPoint(0,-100,-10), // position
+  new DOMPoint(0,0,0,0),    // orientation
+  0,                        // inverse mass
+  100,                      // radius
+));
+
+// Render
+Scene.render(canvas);
+
+// Update
+play.onclick=()=>{
+  setInterval(()=>{
+    Scene.update(1/60);
+    Scene.updateRender();
+  }, 1/60);
+}
+</script>
+
+<style>
+body { margin: 0 }
+script { display: block; white-space: pre; font: 12px courier; position: absolute; bottom: 0; padding: 0 10px 10px; line-height: .9; background: #fed; width: 580px;}
+button { position: absolute; top: 10px; left: 10px; }
+button + button { position: absolute; top: 10px; left: 70px; }
+</style>

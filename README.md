@@ -1,4 +1,4 @@
-# Game Physics in one weekend
+# Game Physics JS
 
 Summary and tiny JS implementation of Gregory Hodges's [Game Physics books](https://gamephysicsweekend.github.io)
 
@@ -13,7 +13,7 @@ Summary and tiny JS implementation of Gregory Hodges's [Game Physics books](http
 
 ## Implementation 
 
-I took some liberties to organize the code and to name things.
+I took some liberties to simplify and reorganize the code.
 
 ### Setup
 
