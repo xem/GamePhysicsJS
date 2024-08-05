@@ -5,7 +5,7 @@ Scene.render = (canvas) => {
   
   W.reset(canvas);
   W.light({x:.5,y:-.5,z:-.2});  // light
-  W.camera({z:11});   // back up camera
+  W.camera({z:10});   // back up camera
   W.clearColor("#def");
   
   for(var i of Scene.b){

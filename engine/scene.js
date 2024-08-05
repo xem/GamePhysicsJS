@@ -40,9 +40,10 @@ Scene = {
 // Resolve a contact
 resolve = contact => {
   
-  // Zero the linear velocity
-  contact.a.lv = new DOMPoint(0,0,0);
-  contact.b.lv = new DOMPoint(0,0,0);
+  // Collision impulse
+  var vj = scale(contact.n, -2 * dot(sub(contact.a.lv, contact.b.lv), contact.n) / (contact.a.im + contact.b.im));
+  contact.a.applyImpulseLinear(vj);
+  contact.b.applyImpulseLinear(scale(vj, -1));
   
   // Move the objects outside of each other
   var ds = sub(contact.pb, contact.pa); 

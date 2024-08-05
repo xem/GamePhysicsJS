@@ -1,28 +1,14 @@
 ﻿<script src="../engine/vec.js"></script>
 <script src="../engine/quat.js"></script>
 <script src="../engine/body.js"></script>
+<script src="../engine/collision.js"></script>
 <script src="../engine/scene.js"></script>
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
 
-<button id=play>PLAY</button> <button onclick=location=location>RESET</button>
+<button id=play>PLAY</button> <button onclick=location=location>RESET</button> <button id=offset>OFFSET</button>
 <canvas id=canvas width=600 height=400></canvas>
 
-<script hidden>
-Scene.update = (dt) => {
-  var i;
-
-  // Apply gravity as an impulse
-  for(var i of Scene.b){     
-    i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
-  }
-  
-  // Update position
-  for(i of Scene.b){
-    i.p = add(i.p, scale(i.lv, dt));
-  }
-}
-</script>
 
 <script hidden>
 // Ball
@@ -33,8 +19,7 @@ Scene.b.push(new Sphere(
   1,                      // inverse mass
   1,                      // radius
 ));
-</script>
-<script>
+
 // Ground
 Scene.b.push(new Sphere(
   "ground",                 // id    
@@ -54,9 +39,14 @@ play.onclick=()=>{
     Scene.updateRender();
   }, 1/60);
 }
+
+offset.onclick = () => {
+  Scene.b[0].p.x += 0.1;
+  Scene.b[0].p.z += 0.1;
+  Scene.update(1/60);
+  Scene.updateRender();
+}
 </script>
-
-
 
 <style>
 body { margin: 0 }
@@ -64,4 +54,5 @@ script { display: block; white-space: pre; font: 12px courier; position: absolut
 script[hidden] { display: none }
 button { position: absolute; top: 10px; left: 10px; }
 button + button { position: absolute; top: 10px; left: 70px; }
+button + button + button { position: absolute; top: 10px; left: 140px; }
 </style>

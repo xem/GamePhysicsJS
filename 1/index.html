@@ -4,8 +4,8 @@
 
 
 <h2>1. Overview</h2>
-
 <p>Summary and tiny JS implementation of the book <a href="https://gamephysicsweekend.github.io">Game Physics: In One Weekend</a> by Gregory Hodges.
+
 
 
 <h2>2. Vectors</h2>
@@ -35,13 +35,9 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 
 
 <h2>4. Quaternions</h2>
-<!--<p>→ Source code: <a href="../engine/quat.js">quat.js</a>-->
 <p>Quaternions are often used to represent rotations.
 <br>They contain four components x, y, z, w (representing a rotation axis and an angle).
-<!--, and will also be implemented with DOMPoint.-->
 <br>To save space, this implementation will only use rotation matrices.
-<!--<br>Methods added: inverse, mag, mags (magnitude squared), rotatePoint, rotateMatrix, mat (transform into a matrix).-->
-
 
 
 <h2>5. Bodies and scene</h2>
@@ -88,8 +84,8 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <p><iframe src=demo8.html width=640 height=410 frameborder=no></iframe>
 
 
+
 <h2>9. Contact and projection method</h2>
-<!--p>→ Source code: <a href="../engine/contact.js">contact.js</a-->
 <p>To separate the bodies properly, we first need the collision method to return a contact object (see collision.js).
 <br>Then, the contact is resolved by moving the objects outside of each other, proportionnally to their masses (see scene.js).
 <p><b>Demo</b>
@@ -97,7 +93,10 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 
 
 
-
+<h2>10. Conservation of momentum</h2>
+<p>Instead of zeroing the velocity of each colliding object, we are going to apply impulses. (see scene.js)
+<p><b>Demo</b>
+<p><iframe src=demo10.html width=640 height=420 frameborder=no></iframe>
 
 
 
