@@ -58,7 +58,6 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 
 
 
-
 <h2>6. Gravity</h2>
 <p>Objects move when a force is applied to them. Gravity is a constant downwards force.
 <br>After each fraction of time elapsed (dt):
@@ -74,15 +73,27 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <br>The im (inverseMass) property and the applyImpulseLinear method are added to the Body class.
 <br>Immovable objects are represented with an infinite mass (im = 0).
 <p><b>Demo</b>
-<p><iframe src=demo7.html width=640 height=660 frameborder=no></iframe>
+<p><iframe src=demo7.html width=640 height=540 frameborder=no></iframe>
 
 
 
+<h2>8. Collision</h2>
+<p>→ Source code: <a href="../engine/collision.js">collision.js</a>
+<p>Two spheres collide if the sum of their radii is smaller than the distance between their center positions.
+<br>A little optimization: finding a distance requires a square root, which is expensive for the CPU, so we prefer comparing the square of the distance to the square of the sum of radii.
+<br>In the Scene's update function, we check collisions between every pair of spheres, and skip the cases where both are immovable.
+<br>When an intersection is found, the spheres velocity is set to 0, for now.
+<br>But we can see it's not ideal: the spheres are interpenetrating.
+<p><b>Demo</b>
+<p><iframe src=demo8.html width=640 height=410 frameborder=no></iframe>
 
 
-
-
-
+<h2>9. Contact and projection method</h2>
+<!--p>→ Source code: <a href="../engine/contact.js">contact.js</a-->
+<p>To separate the bodies properly, we first need the collision method to return a contact object (see collision.js).
+<br>Then, the contact is resolved by moving the objects outside of each other, proportionnally to their masses (see scene.js).
+<p><b>Demo</b>
+<p><iframe src=demo9.html width=640 height=420 frameborder=no></iframe>
 
 
 

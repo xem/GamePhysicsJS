@@ -2,6 +2,7 @@
 <script src="../engine/quat.js"></script>
 <script src="../engine/body.js"></script>
 <script src="../engine/scene.js"></script>
+<script src="../engine/collision.js"></script>
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
 
@@ -9,32 +10,15 @@
 <canvas id=canvas width=600 height=400></canvas>
 
 <script hidden>
-Scene.update = (dt) => {
-  var i;
-
-  // Apply gravity as an impulse
-  for(var i of Scene.b){     
-    i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
-  }
-  
-  // Update position
-  for(i of Scene.b){
-    i.p = add(i.p, scale(i.lv, dt));
-  }
-}
-</script>
-
-<script hidden>
 // Ball
 Scene.b.push(new Sphere(
   "ball",                 // id
-  new DOMPoint(0,4,0),    // position
+  new DOMPoint(0,4.2,0),  // position
   new DOMPoint(0,0,0,0),  // orientation
   1,                      // inverse mass
   1,                      // radius
 ));
-</script>
-<script>
+
 // Ground
 Scene.b.push(new Sphere(
   "ground",                 // id    
@@ -55,8 +39,6 @@ play.onclick=()=>{
   }, 1/60);
 }
 </script>
-
-
 
 <style>
 body { margin: 0 }

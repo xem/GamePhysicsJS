@@ -1,4 +1,7 @@
-﻿class Body {
+﻿// Body
+// ====
+
+class Body {
   
   id; // name
   s;  // shape (0: NONE, 1: SPHERE, ...)
@@ -48,7 +51,6 @@ class Sphere extends Body {
   r; // radius
   
   constructor(id, p, o, im, r = 1){
-    console.log(id);
     super(id, 1, p, o, im);
     this.r = r;
   }

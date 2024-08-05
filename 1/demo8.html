@@ -1,7 +1,57 @@
 ﻿<script src="../engine/vec.js"></script>
 <script src="../engine/quat.js"></script>
 <script src="../engine/body.js"></script>
-<script src="../engine/scene.js"></script>
+<script hidden>
+// Scene
+// =====
+
+Scene = {
+  
+  b: [], // list of bodies
+  
+  // Update
+  update: (dt) => {
+    var i, j, contat;
+  
+    // Apply gravity as an impulse
+    for(var i of Scene.b){     
+      i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
+    }
+
+    // Check collisions
+    for(i = 0; i < Scene.b.length; i++){
+      for(var j = i+1; j < Scene.b.length; j++){
+        if(Scene.b[i].im != 0 || Scene.b[j].im != 0){      
+          if(collisionSphereSphere(Scene.b[i], Scene.b[j])){
+            Scene.b[i].lv = new DOMPoint(0,0,0);
+            Scene.b[j].lv = new DOMPoint(0,0,0);
+          }
+        }
+      }
+    }
+    
+    // Update position
+    for(i of Scene.b){
+      i.p = add(i.p, scale(i.lv, dt));
+    }
+  },
+  
+  // Rendering (exampe of implementation in renderer/render.js)
+  render: () => {},
+  updateRender : () => {} 
+
+}
+</script>
+<script hidden>
+// collision
+// =========
+
+// Sphere-sphere collision
+
+collisionSphereSphere = (a, b) => {
+  return mags(sub(b.p, a.p)) < (a.r + b.r) ** 2;
+}
+</script>
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
 
@@ -10,11 +60,24 @@
 
 <script hidden>
 Scene.update = (dt) => {
-  var i;
+  var i, j;
 
   // Apply gravity as an impulse
   for(var i of Scene.b){     
     i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
+  }
+
+  // Check collisions
+  for(i = 0; i < Scene.b.length; i++){
+    for(var j = i+1; j < Scene.b.length; j++){
+      console.log(Scene.b[i].im,Scene.b[j].im);
+      if(Scene.b[i].im != 0 || Scene.b[j].im != 0){      
+        if(collisionSphereSphere(Scene.b[i], Scene.b[j])){
+          Scene.b[i].lv = new DOMPoint(0,0,0);
+          Scene.b[j].lv = new DOMPoint(0,0,0);
+        }
+      }
+    }
   }
   
   // Update position
@@ -28,13 +91,12 @@ Scene.update = (dt) => {
 // Ball
 Scene.b.push(new Sphere(
   "ball",                 // id
-  new DOMPoint(0,4,0),    // position
+  new DOMPoint(0,4.2,0),  // position
   new DOMPoint(0,0,0,0),  // orientation
   1,                      // inverse mass
   1,                      // radius
 ));
-</script>
-<script>
+
 // Ground
 Scene.b.push(new Sphere(
   "ground",                 // id    
@@ -55,8 +117,6 @@ play.onclick=()=>{
   }, 1/60);
 }
 </script>
-
-
 
 <style>
 body { margin: 0 }
