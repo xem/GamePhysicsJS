@@ -10,14 +10,16 @@ class Body {
   c;  // center of mass (DOMPoint, in model space)
   lv = new DOMPoint; // linear velocity
   im; // inverse mass (0 = immovable)
+  e;  // elasticity
   
-  constructor(id, s = 0, p = new DOMPoint, o = new DOMMatrix, im = 1, c = new DOMPoint){
+  constructor(id, s = 0, p = new DOMPoint, o = new DOMMatrix, im = 1, e = 1, c = new DOMPoint){
     this.id = id;
     this.s = s;
     this.p = p;
     this.o = o;
     this.c = c;
     this.im = im;
+    this.e = e;
   }
   
   // Center of mass in world space
@@ -50,8 +52,8 @@ class Sphere extends Body {
   
   r; // radius
   
-  constructor(id, p, o, im, r = 1){
-    super(id, 1, p, o, im);
+  constructor(id, p, o, im, r = 1, e = 1, c = new DOMPoint){
+    super(id, 1, p, o, im, e, c);
     this.r = r;
   }
   

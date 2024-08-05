@@ -94,13 +94,22 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 
 
 <h2>10. Conservation of momentum</h2>
-<p>Instead of zeroing the velocity of each colliding object, we are going to apply impulses. (see scene.js)
+<p>Instead of zeroing the velocity of each colliding object, we are going to apply impulses in the opposite direction. (see scene.js)
+<p>Without other modifications, the bouncing will remain constant, or vary a little because of rounding errors.
+<br>A more realistic bouncing would lose a bit of energy after each collision.
+<p><b><a href=demo10.html target=_blank>See the demo</a></b>
+
+
+
+<h2>11. Elasticity</h2>
+<p>A collistion that perfectly conserves the kinetic energy is elastic. If it loses some at each collision, it's inelastic.
+<br>The elasticity of an object is also known as constitution, restitution or bounciness and is a number between 0 (least perfect) and 1 (most perfect).
+<br>The Body class gets a new elasticity value (e). (see body.js)
+<br>To make things simple, the resolve function applies the product of the two objects' elasticities. (see scene.js)
+<br>After a few seconds, the "final" position of the ball may remain shaky due to constant recomputations and rounding errors.
+<br>It is usually fixed by ignoring impulses smaller than a minimum threshold (ex: 0.1).
 <p><b>Demo</b>
-<p><iframe src=demo10.html width=640 height=420 frameborder=no></iframe>
-
-
-
-
+<p><iframe src=demo11.html width=640 height=540 frameborder=no></iframe>
 
 
 

@@ -6,11 +6,11 @@
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
 
-<button id=play>PLAY</button> <button onclick=location=location>RESET</button> <button id=offset hidden>OFFSET</button>
+<button id=play>PLAY</button> <button onclick=location=location>RESET</button>
 <canvas id=canvas width=600 height=400></canvas>
 
 
-<script hidden>
+<script>
 // Ball
 Scene.b.push(new Sphere(
   "ball",                 // id
@@ -18,7 +18,7 @@ Scene.b.push(new Sphere(
   new DOMPoint(0,0,0,0),  // orientation
   1,                      // inverse mass
   1,                      // radius
-  .99,                    // elasticity
+  0.85,                   // elasticity
 ));
 
 // Ground
@@ -30,7 +30,8 @@ Scene.b.push(new Sphere(
   100,                      // radius
   1,                        // elasticity
 ));
-
+</script>
+<script hidden>
 // Render
 Scene.render(canvas);
 
@@ -40,13 +41,6 @@ play.onclick=()=>{
     Scene.update(1/60);
     Scene.updateRender();
   }, 1/60);
-}
-
-offset.onclick = () => {
-  Scene.b[0].p.x += 0.1;
-  Scene.b[0].p.z += 0.1;
-  Scene.update(1/60);
-  Scene.updateRender();
 }
 </script>
 
