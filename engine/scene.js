@@ -44,7 +44,7 @@ resolve = contact => {
   var e = contact.a.e * contact.b.e;
   
   // Collision impulse
-  var vj = scale(contact.n, -2 * e * dot(sub(contact.a.lv, contact.b.lv), contact.n) / (contact.a.im + contact.b.im));
+  var vj = scale(contact.n, -(1 + e) * dot(sub(contact.a.lv, contact.b.lv), contact.n) / (contact.a.im + contact.b.im));
   contact.a.applyImpulseLinear(vj);
   contact.b.applyImpulseLinear(scale(vj, -1));
   

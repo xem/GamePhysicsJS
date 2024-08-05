@@ -8,13 +8,13 @@
 
 <script>
 // Ball
-Scene.b.push(new Sphere(
-  "ball",                 // id
-  new DOMPoint(0,3.6,0),  // position
-  new DOMPoint(0,0,0,0),  // orientation
-  1,                      // inverse mass
-  1,                      // radius
-)); 
+Scene.b.push(new Sphere({
+  id: "ball",               // id
+  p: new DOMPoint(0,3.6,0), // position
+  r:1,                      // radius
+}));
+
+// Render
 Scene.render(canvas);
 </script>
 

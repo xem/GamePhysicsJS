@@ -1,25 +1,26 @@
 ﻿// Body
 // ====
 
+// Body
 class Body {
-  
-  id; // name
-  s;  // shape (0: NONE, 1: SPHERE, ...)
+  id; // unique identifier
+  s;  // shape (1: SPHERE, 2: box...)
   p;  // position (DOMPoint, in world space)
   o;  // orientation (DOMMatrix)
   c;  // center of mass (DOMPoint, in model space)
-  lv = new DOMPoint; // linear velocity
   im; // inverse mass (0 = immovable)
   e;  // elasticity
+  lv; // linear velocity
   
-  constructor(id, s = 0, p = new DOMPoint, o = new DOMMatrix, im = 1, e = 1, c = new DOMPoint){
-    this.id = id;
-    this.s = s;
-    this.p = p;
-    this.o = o;
-    this.c = c;
-    this.im = im;
-    this.e = e;
+  constructor(params){
+    this.id = params.id ?? "b" + (scene.b.length);
+    this.s = params.s ?? 0;
+    this.p = params.p ?? new DOMPoint;
+    this.o = params.o ?? new DOMMatrix;
+    this.c = params.c ?? new DOMPoint;
+    this.im = params.im ?? 1;
+    this.e = params.e ?? 1;
+    this.lv = params.lv ?? new DOMPoint;
   }
   
   // Center of mass in world space
@@ -27,16 +28,18 @@ class Body {
     return add(this.p, this.o.transformPoint(this.c));
   }
   
-  // Center of mass if mode space
+  // Center of mass if model space
   cModel(){
     return this.c;
   }
-  
-  worldToBody(p) {
+
+  // World space to model space
+  worldToModel(p) {
     return (this.o.inverse()).transformPoint(sub(p, this.cWorld()));
   }
-  
-  bodyToWorld(p) {
+
+  // Model space to world space
+  modelToWorld(p) {
     return add(this.cWorld(), this.o.transformPoint(p));
   }
   
@@ -45,16 +48,14 @@ class Body {
       this.lv = add(this.lv, scale(i, this.im));
     }
   }
-  
 }
 
+// Sphere
 class Sphere extends Body {
-  
   r; // radius
   
-  constructor(id, p, o, im, r = 1, e = 1, c = new DOMPoint){
-    super(id, 1, p, o, im, e, c);
-    this.r = r;
+  constructor(params){
+    super(params);
+    this.r = params.r ?? 1;
   }
-  
 }

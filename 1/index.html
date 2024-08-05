@@ -4,19 +4,50 @@
 
 
 <h2>1. Overview</h2>
-<p>Summary and tiny JS implementation of the book <a href="https://gamephysicsweekend.github.io">Game Physics: In One Weekend</a> by Gregory Hodges.
+<p>Summary and tiny JS implementation of the book <a href="https://gamephysicsweekend.github.io">Game Physics: In One Weekend</a> by Gregory Hodges
+<br>Many details not related to the JS implementation are omitted or simplified (read the books for more information).
+<br>Some extra tips and explanations not present in the book are added in this page when necessary.
 
 
 
 <h2>2. Vectors</h2>
 <p>→ Source code: <a href="../engine/vec.js">vec.js</a>
 <p>Vectors are 1D arrays containing 2, 3 or 4 numbers, called components.
-<br>They either represent a signed displacement (direction + magnitude) or a point in space.
+<br>They either represent a direction or a point in space.
 <br>This JS implementation will represent vectors with <a href="https://developer.mozilla.org/en-US/docs/Web/API/DOMPoint">DOMPoint</a>.
 <p><code>v2 = new DOMPoint(x, y);        // 2D
 v3 = new DOMPoint(x, y, z);     // 3D
 v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</code>
-<p>Methods added: add, sub, mul (component-wise multiplication), scale, dot (dot product), cross (cross product), norm (normalize), mag (magnitude)
+<p>Helper methods implemented:
+<p><code class=f><b>// Addition</b>
+add = (u, v) => new DOMPoint(u.x + v.x, u.y + v.y, u.z + v.z, u.w);
+
+<b>// Subtraction</b>
+sub = (u, v) => new DOMPoint(u.x - v.x, u.y - v.y, u.z - v.z, u.w);
+
+<b>// Component-wise multiplication</b>
+mul = (u, v) => new DOMPoint(u.x * v.x, u.y * v.y, u.z * v.z, u.w);
+
+<b>// Scaling (s is a number)</b>
+scale = (u, s) => new DOMPoint(u.x * s, u.y * s, u.z * s, u.w);
+
+<b>// Dot product</b>
+dot = (u, v) => u.x * v.x + u.y * v.y + u.z * v.z;
+
+<b>// Magnitude / magnitude squared</b>
+mag = v => Math.sqrt(dot(v, v));
+mags = v => dot(v, v);
+
+<b>// Normalize</b>
+norm = v => scale(v, 1 / mag(v));
+
+<b>// Cross product</b>
+cross = (u, v) => new DOMPoint(
+  u.y * v.z - u.z * v.y,
+  u.x * v.z - u.z * v.x,
+  u.x * v.y - u.y * v.x,
+  0
+);</code>
 
 
 
@@ -29,33 +60,93 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
   m31, m32, m33, m34,
   m41, m42, m43, m44
 ]);</code>
-<p>Useful native methods: multiply, inverse, translate, scale, rotate, rotateAxisAngle, transformPoint...
-<br>(warning: transpose is not available natively)
+<p>DOMMatrix comes with useful native methods:
+<br>multiply, inverse, translate, scale, rotate, rotateAxisAngle, transformPoint... (but not transpose)
 
 
 
 <h2>4. Quaternions</h2>
 <p>Quaternions are often used to represent rotations.
 <br>They contain four components x, y, z, w (representing a rotation axis and an angle).
-<br>To save space, this implementation will only use rotation matrices.
+<br>To save space, this implementation will skip quaternions and use rotation matrices.
 
 
 <h2>5. Bodies and scene</h2>
 <p>→ Source code: <a href="../engine/body.js">body.js</a>, <a href="../engine/body.js">scene.js</a>
-<p>A physics simulation is a collection of (colliding) bodies stored in a scene.
-<br>A Body has a position p (vector), a center of mass m (vector), an orientation o (matrix) and a shape constant s (1: sphere, 2: box).
+<p>A Body has an id, a shape constant s (1 for sphere, 2 for box), a position p, an orientation o, and a center of mass c.
 <br>A Sphere is an object extending Body with a radius (r) property.
-<br>The Scene contains a collection of bodies (b) and two methods: update and render.
+<br>The Scene object contains a collection of bodies (b) and two methods: update and render.
+<br>A WebGL renderer is available in <a href="../renderer/render.js">renderer/render.js</a> and <a href="../renderer/w.js">renderer/w.js</a> and used in the following demos.
+
+<p><code class=f><b>// Body</b>
+class Body {
+  id; // unique identifier
+  s;  // shape (1: SPHERE, 2: box...)
+  p;  // position (DOMPoint, in world space)
+  o;  // orientation (DOMMatrix)
+  c;  // center of mass (DOMPoint, in model space)
+  
+  constructor(params){
+    this.id = params.id ?? "b" + (scene.b.length);
+    this.s = params.s ?? 0;
+    this.p = params.p ?? new DOMPoint;
+    this.o = params.o ?? new DOMMatrix;
+    this.c = params.c ?? new DOMPoint;
+  }
+}
+
+<b>// Sphere</b>
+class Sphere extends Body {
+  r; // radius
+  
+  constructor(params){
+    super(params);
+    this.r = params.r ?? 1;
+  }
+}
+
+<b>// Scene</b>
+Scene = {
+  b: [], // list of bodies
+  
+  // Update
+  update: (dt) => { /* ... */ },
+  
+  // Rendering
+  render: () => { /* ... */ }
+}</code>
 <p><b>Demo</b>
 <p><iframe src=demo5.html width=640 height=410 frameborder=no></iframe>
-<p>World space coordinates are given along the global X, Y, Z axis.
+<p><b>Spaces</b>
+<p>World space coordinates are given along the global X, Y and Z axis.
+<br>(NB: in WebGL, contrary to the book, the +Y axis is up and the +Z axis is to the front.)
 <br>Model space coordinates are relative to a model (ex: a sphere).
-<br>worldToBody and bodyToWorld methods are added in the class Body to easily convert a point's coordinates between the two spaces.
+<br>The center of mass (c) of an object is given in model coordinates.
+<br>These helper methods are added in the class Body to easily convert a point's coordinates between spaces.
+<p><code class=f><b>// Center of mass in world space</b>
+cWorld(){
+  return add(this.p, this.o.transformPoint(this.c));
+}
+
+<b>// Center of mass if model space</b>
+cModel(){
+  return this.c;
+}
+
+<b>// World space to model space</b>
+worldToModel(p) {
+  return (this.o.inverse()).transformPoint(sub(p, this.cWorld()));
+}
+
+<b>// Model space to world space</b>
+modelToWorld(p) {
+  return add(this.cWorld(), this.o.transformPoint(p));
+}</code>
 
 
 
 <h2>6. Gravity</h2>
-<p>Objects move when a force is applied to them. Gravity is a constant downwards force.
+<p>Objects move when a force is applied to them. Gravity is a constant downwards force (rounded to 10m/s²).
 <br>After each fraction of time elapsed (dt):
 <br> - the change in velocity (dv) is computed from the accelerations (a) using the equation <b>dv = a x dt</b>.
 <br>- the change of position (dx) is computed from the velocity (v) using the equation <b>dx = v * dt</b>.
@@ -69,7 +160,7 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <br>The im (inverseMass) property and the applyImpulseLinear method are added to the Body class.
 <br>Immovable objects are represented with an infinite mass (im = 0).
 <p><b>Demo</b>
-<p><iframe src=demo7.html width=640 height=540 frameborder=no></iframe>
+<p><iframe src=demo7.html width=640 height=620 frameborder=no></iframe>
 
 
 
@@ -95,10 +186,10 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 
 <h2>10. Conservation of momentum</h2>
 <p>Instead of zeroing the velocity of each colliding object, we are going to apply impulses in the opposite direction. (see scene.js)
-<p>Without other modifications, the bouncing will remain constant, or vary a little because of rounding errors.
+<br>Without other modifications, the bouncing will remain constant, or vary a little because of rounding errors.
 <br>A more realistic bouncing would lose a bit of energy after each collision.
-<p><b><a href=demo10.html target=_blank>See the demo</a></b>
-
+<!--p><b><a href=demo10.html target=_blank>See the demo</a></b-->
+<p><iframe src=demo10.html width=640 height=420 frameborder=no></iframe>
 
 
 <h2>11. Elasticity</h2>
@@ -106,8 +197,9 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <br>The elasticity of an object is also known as constitution, restitution or bounciness and is a number between 0 (least perfect) and 1 (most perfect).
 <br>The Body class gets a new elasticity value (e). (see body.js)
 <br>To make things simple, the resolve function applies the product of the two objects' elasticities. (see scene.js)
-<br>After a few seconds, the "final" position of the ball may remain shaky due to constant recomputations and rounding errors.
+<br>After a few seconds, the "final" position of the ball will remain shaky due to constant recomputations and rounding errors.
 <br>It is usually fixed by ignoring impulses smaller than a minimum threshold (ex: 0.1).
+<br>Note: in rigid body simulations, elasticity only adds bounciness, it does not deform (squish) the bouncing objects.
 <p><b>Demo</b>
 <p><iframe src=demo11.html width=640 height=540 frameborder=no></iframe>
 
@@ -122,9 +214,8 @@ v4 = new DOMPoint(x, y, z, w);  // 4D (3D + w component, default: 0, 0, 0, 1)</c
 <style>
 body { font: 15px calibri; padding: 10px; }
 h2 { margin: 30px 0 0 0; }
-code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0; font: bold 14px/22px courier; white-space: pre; position: relative;}
-.f { background: #fde; font-family: arial; }
-code.f:before { content: "Formula"; color: #cab; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0; font: 12px/14px courier; white-space: pre; position: relative; letter-spacing: -.9}
+.f { background: #ffd; }
 p { padding: 0 0 0 10px }
-code b.sqrt { border-top: 1px solid; }
+code b { line-height: 17px; color: #555; font-size: 13px; }
 </style>

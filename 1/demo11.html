@@ -6,30 +6,28 @@
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
 
-<button id=play>PLAY</button> <button onclick=location=location>RESET</button>
+<button id=play>PLAY</button> <button onclick=location=location>RESET</button>  <button id=threshold hidden>ADD THRESHOLD</button>
 <canvas id=canvas width=600 height=400></canvas>
 
 
 <script>
 // Ball
-Scene.b.push(new Sphere(
-  "ball",                 // id
-  new DOMPoint(0,3.6,0),  // position
-  new DOMPoint(0,0,0,0),  // orientation
-  1,                      // inverse mass
-  1,                      // radius
-  0.85,                   // elasticity
-));
+Scene.b.push(new Sphere({
+  id: "ball",                 // id
+  p: new DOMPoint(0,3.6,0),   // position
+  im: 1,                      // inverse mass
+  r: 1,                       // radius
+  e: .85,                     // elasticity
+}));
 
 // Ground
-Scene.b.push(new Sphere(
-  "ground",                 // id    
-  new DOMPoint(0,-102,0),   // position
-  new DOMPoint(0,0,0,0),    // orientation
-  0,                        // inverse mass
-  100,                      // radius
-  1,                        // elasticity
-));
+Scene.b.push(new Sphere({
+  id: "ground",               // id    
+  p: new DOMPoint(0,-102,0),  // position
+  im: 0,                      // inverse mass
+  r: 100,                     // radius
+  e: 1,                       // elasticity
+}));
 </script>
 <script hidden>
 // Render
@@ -41,6 +39,34 @@ play.onclick=()=>{
     Scene.update(1/60);
     Scene.updateRender();
   }, 1/60);
+}
+
+threshold.onclick = () => {
+
+  resolve = contact => {
+    
+    // Elasticity
+    var e = contact.a.e * contact.b.e;
+    
+    // Collision impulse
+    var vj = scale(contact.n, -(1+e) * dot(sub(contact.a.lv, contact.b.lv), contact.n) / (contact.a.im + contact.b.im));
+    //console.log(mag(vj));
+    contact.a.applyImpulseLinear(vj);
+    contact.b.applyImpulseLinear(scale(vj, -1));
+    console.log(mag(contact.a.lv));
+    if(mag(contact.a.lv) < 2){
+      contact.a.lv = scale(contact.a.lv, .5);
+    }
+    if(mag(contact.b.lv) < 2){
+      contact.b.lv = scale(contact.b.lv, .5);
+    }
+    
+    // Move the objects outside of each other
+    var ds = sub(contact.pb, contact.pa); 
+    contact.a.p = add(contact.a.p, scale(ds, contact.a.im / (contact.a.im + contact.b.im)));
+    contact.b.p = add(contact.b.p, scale(ds, contact.b.im / (contact.a.im + contact.b.im)));
+  }
+
 }
 </script>
 
