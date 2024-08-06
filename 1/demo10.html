@@ -35,7 +35,7 @@ Scene.render(canvas);
 play.onclick=()=>{
   setInterval(()=>{
     Scene.update(1/60);
-    Scene.updateRender();
+    Scene.render();
   }, 1/60);
 }
 
@@ -43,7 +43,7 @@ offset.onclick = () => {
   Scene.b[0].p.x += 0.1;
   Scene.b[0].p.z += 0.1;
   Scene.update(1/60);
-  Scene.updateRender();
+  Scene.render();
 }
 </script>
 

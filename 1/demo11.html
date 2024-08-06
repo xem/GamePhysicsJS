@@ -6,7 +6,7 @@
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
 
-<button id=play>PLAY</button> <button onclick=location=location>RESET</button>  <button id=threshold hidden>ADD THRESHOLD</button>
+<button id=play>PLAY</button> <button onclick=location=location>RESET</button>  <button id=threshold>ADD THRESHOLD</button>
 <canvas id=canvas width=600 height=400></canvas>
 
 
@@ -17,7 +17,7 @@ Scene.b.push(new Sphere({
   p: new DOMPoint(0,3.6,0),   // position
   im: 1,                      // inverse mass
   r: 1,                       // radius
-  e: .85,                     // elasticity
+  e: 0.75,                    // elasticity
 }));
 
 // Ground
@@ -28,7 +28,34 @@ Scene.b.push(new Sphere({
   r: 100,                     // radius
   e: 1,                       // elasticity
 }));
+
+
+
+
+
+
+
+
+
+
+
+
+
 </script>
+<code>
+// Threshold fix:
+resolve = contact => {
+  
+  // ...
+  
+  if(mag(contact.a.lv) &lt; 2){
+    contact.a.lv = new DOMPoint(0,0,0);
+  }
+  if(mag(contact.b.lv) &lt; 2){
+    contact.b.lv = new DOMPoint(0,0,0);
+  }
+}
+</code>
 <script hidden>
 // Render
 Scene.render(canvas);
@@ -37,12 +64,12 @@ Scene.render(canvas);
 play.onclick=()=>{
   setInterval(()=>{
     Scene.update(1/60);
-    Scene.updateRender();
+    Scene.render();
   }, 1/60);
 }
 
 threshold.onclick = () => {
-
+  threshold.remove();
   resolve = contact => {
     
     // Elasticity
@@ -55,10 +82,10 @@ threshold.onclick = () => {
     contact.b.applyImpulseLinear(scale(vj, -1));
     console.log(mag(contact.a.lv));
     if(mag(contact.a.lv) < 2){
-      contact.a.lv = scale(contact.a.lv, .5);
+      contact.a.lv = new DOMPoint(0,0,0);
     }
     if(mag(contact.b.lv) < 2){
-      contact.b.lv = scale(contact.b.lv, .5);
+      contact.b.lv = new DOMPoint(0,0,0);
     }
     
     // Move the objects outside of each other
@@ -72,7 +99,7 @@ threshold.onclick = () => {
 
 <style>
 body { margin: 0 }
-script { display: block; white-space: pre; font: 12px courier; position: absolute; bottom: 0; padding: 0 10px 10px; line-height: .9; background: #fed; width: 580px;}
+script,code { display: block; white-space: pre; font: 12px courier; position: absolute; bottom: 0; padding: 0 10px 10px; line-height: .9; background: #fed; width: 580px;}
 script[hidden] { display: none }
 button { position: absolute; top: 10px; left: 10px; }
 button + button { position: absolute; top: 10px; left: 70px; }

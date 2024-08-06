@@ -5,6 +5,9 @@ debug = 0; // Enable shader/program compilation logs (optional)
 
 W = {
   
+  // List of ids
+  //ids: {}
+  
   // List of 3D models that can be rendered by the framework
   // (See the end of the file for built-in models: plane, billboard, cube, pyramid...)
   models: {},
@@ -132,6 +135,7 @@ W = {
 
     // Custom name or default name ('o' + auto-increment)
     state.n ||= 'o' + W.objs++;
+    //W.ids[state.n] = 1;
     
     // Size sets w, h and d at once (optional)
     if(state.size) state.w = state.h = state.d = state.size * 2;

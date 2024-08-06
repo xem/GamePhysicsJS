@@ -4,9 +4,9 @@
 
 
 <h2>1. Overview</h2>
-<p>Summary and tiny JS implementation of the book <a href="https://gamephysicsweekend.github.io">Game Physics: In One Weekend</a> by Gregory Hodges
-<br>Many details not related to the JS implementation are omitted or simplified (read the books for more information).
-<br>Some extra tips and explanations not present in the book are added in this page when necessary.
+<p>Summary and tiny JS implementation of the book <a href="https://gamephysicsweekend.github.io">Game Physics: In One Weekend</a> by Gregory Hodges.
+<br>Many details not related to this implementation are omitted or simplified (more info in the books).
+<br>Some extra tips and explanations, not present in the book, are added in this page when necessary.
 
 
 
@@ -52,36 +52,53 @@ cross = (u, v) => new DOMPoint(
 
 
 <h2>3. Matrices</h2>
+<p>→ Source code: <a href="../engine/matrix.js">matrix.js</a>
 <p>Matrices are 2D grids of numbers (2x2, 3x3 or 4x4) representing linear transformations.
 <br>This JS implementation will represent matrices with <a href="https://developer.mozilla.org/en-US/docs/Web/API/DOMMatrix">DOMMatrix</a>.
 <p><code>m = new DOMMatrix([
-  m11, m12, m13, m14,
-  m21, m22, m23, m24,
-  m31, m32, m33, m34,
-  m41, m42, m43, m44
+  m11, m22, m31, m41,
+  m12, m22, m32, m42,
+  m13, m23, m33, m43,
+  m14, m24, m34, m44
 ]);</code>
 <p>DOMMatrix comes with useful native methods:
-<br>multiply, inverse, translate, scale, rotate, rotateAxisAngle, transformPoint... (but not transpose)
+<br>multiply, inverse, translate, scale, rotate, rotateAxisAngle, transformPoint... 
+<br>Only transpose is not included:
+<p><code class=f><b>// Transpose a DOMMatrix (invert horizontal and vertical axis)</b>
 
+transpose = m => {
+  return new DOMMatrix([
+    m.m11, m.m12, m.m13, m.m14,
+    m.m21, m.m22, m.m23, m.m24,
+    m.m31, m.m32, m.m33, m.m34,
+    m.m41, m.m42, m.m43, m.m44,
+  ]);
+}</code>
+
+<p>Note: for rotation matrices (without scaling), transposing is equivalent to an inversion: <b>M<sup>-1</sup> = M<sup>T</sup></b>.
+<br>Transposing is much less CPU-intensive than inversing, so it's priviledged when possible.
+<br>If you're on a tight byte budget, you can replace it with m.inverse() and remove the code above.
 
 
 <h2>4. Quaternions</h2>
-<p>Quaternions are often used to represent rotations.
+<p>Quaternions are often used in games to represent rotations.
 <br>They contain four components x, y, z, w (representing a rotation axis and an angle).
-<br>To save space, the current JS implementation will skip quaternions and use rotation matrices.
+<br>To save space, the current JS implementation will skip quaternions and use rotation matrices directly.
 
 
 <h2>5. Bodies and scene</h2>
 <p>→ Source code: <a href="../engine/body.js">body.js</a>, <a href="../engine/body.js">scene.js</a>
-<p>A Body has an id, a shape constant s (1 for sphere, 2 for box), a position p, an orientation o, and a center of mass c.
-<br>A Sphere is an object extending Body with a radius (r) property.
+<p>A Body has an <b>id</b>, a shape constant <b>s</b> (1: sphere, 2: box...), a position <b>p</b>, an orientation <b>o</b>, and a center of mass <b>c</b>.
+<br>A Sphere is an object extending Body, adding a radius (r) property.
 <br>The Scene object contains a collection of bodies (b) and two methods: update and render.
-<br>A WebGL renderer is available in <a href="../renderer/render.js">renderer/render.js</a> and <a href="../renderer/w.js">renderer/w.js</a> and used in the following demos.
+<br>We will write the update function to compute the simulation at each frame.
+<br>The render method is empty by default, so you can implement it freely.
+<br>A WebGL renderer is available <a href="https://github.com/xem/GamePhysicsJS/tree/gh-pages/renderer">in the renderer folder</a> and used in the following demos.
 
 <p><code class=f><b>// Body</b>
 class Body {
   id; // unique identifier
-  s;  // shape (1: SPHERE, 2: box...)
+  s;  // shape (1: sphere, 2: box...)
   p;  // position (DOMPoint, in world space)
   o;  // orientation (DOMMatrix)
   c;  // center of mass (DOMPoint, in model space)
@@ -121,18 +138,18 @@ Scene = {
 <br>
 <p><b>World space vs. model space</b>
 <p>World space coordinates are given along the global X, Y and Z axis.
-<br>(NB: in WebGL, contrary to the book, the +Y axis is up and the +Z axis is to the front.)
+<br>(Note: in WebGL, contrary to the book, the +Y axis is up and the +Z axis is to the front.)
 <br>Model space coordinates are relative to a model (ex: a sphere).
 <br>The center of mass (c) of an object is given in model coordinates.
 <br>These helper methods are added in the class Body to easily convert a point's coordinates between spaces.
-<p><code class=f><b>// Center of mass in world space</b>
-cWorld(){
-  return add(this.p, this.o.transformPoint(this.c));
-}
-
-<b>// Center of mass if model space</b>
+<p><code class=f><b>// Center of mass in model space</b>
 cModel(){
   return this.c;
+}
+
+<b>// Center of mass in world space</b>
+cWorld(){
+  return add(this.p, this.o.transformPoint(this.c));
 }
 
 <b>// World space to model space</b>
@@ -148,7 +165,8 @@ modelToWorld(p) {
 
 
 <h2>6. Gravity</h2>
-<p>Objects move when a force is applied to them. Gravity is a constant downwards force (rounded to 10m/s²).
+<p>Objects move when a force is applied to them.
+<br>Gravity is a constant downwards force (rounded to 10m/s²).
 <br>After each fraction of time elapsed (dt):
 <br> - the change in velocity (dv) is computed from the acceleration (a) using the equation <b>dv = a * dt</b>.
 <br>- the change of position (dx) is computed from the velocity (v) using the equation <b>dx = v * dt</b>.
@@ -168,11 +186,12 @@ modelToWorld(p) {
 }</code>
 
 <h2>7. Gravity, masses and impulses</h2>
-<p>The engine will treat acceleraion forces (like gravity) as impulses (momentum changes).
+<p>The physics engine treats acceleraion forces (like gravity) as impulses (momentum changes).
 <br>The change of velocity is proportional to the impulse force and invesely proportional to the mass (dv = J / m).
-<br>To implement this, the im (inverseMass) property and the applyImpulseLinear method are added to the Body class.
-<br>Scene.update is completed, scene.updateRender is added.
+<br>To implement this, the <b>im</b> (inverseMass) property and the applyImpulseLinear method are added to the Body class.
 <br>Immovable objects are represented with an infinite mass (im = 0).
+<br>The Scene.update function is completed.
+<br>A ground is added to the demo in the form of a big sphere (the ball falls through it for now).
 <p><code class=f><b>// Body</b>
 
 class Body {
@@ -199,13 +218,13 @@ class Body {
 
 <b>// Scene</b>
 
-// Compute celocity and position of each sphere
+// Compute velocity and position of each sphere
 
 Scene.update = dt => {
   var i;
 
   // Apply gravity as an impulse
-  for(var i of Scene.b){     
+  for(i of Scene.b){     
     i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
   }
   
@@ -213,23 +232,77 @@ Scene.update = dt => {
   for(i of Scene.b){
     i.p = add(i.p, scale(i.lv, dt));
   }
-}
-
-// update the positions of each sphere in the scene (see renderer/render.js)
-
-Scene.updateRender : () => { /* ... */ } </code>
+}</code>
 <p><b>Demo</b>
-<p><iframe src=demo7.html width=640 height=620 frameborder=no></iframe>
+<p><iframe src=demo7.html width=640 height=550 frameborder=no></iframe>
 
 
 
 <h2>8. Collision</h2>
 <p>→ Source code: <a href="../engine/collision.js">collision.js</a>
 <p>Two spheres collide if the sum of their radii is smaller than the distance between their center positions.
-<br>A little optimization: finding a distance requires a square root, which is expensive for the CPU, so we prefer comparing the square of the distance to the square of the sum of radii.
-<br>In the Scene's update function, we check collisions between every pair of spheres, and skip the cases where both are immovable.
+<br>Computing a distance requires a square root, which is expensive for the CPU, so to simplify,<br>we will compare the square of the distance to the square of the sum of radii.
+<br>Let's add collisionSphereSphere in collision.js.
+<br>In the Scene.update function, we check collisions between every pair of spheres, unless both are immovable.
 <br>When an intersection is found, the spheres velocity is set to 0 (for now).
 <br>But we can see it's not ideal: the spheres are interpenetrating.
+
+<p><code class=f><b>// Sphere-sphere collision</b>
+
+collisionSphereSphere = (a, b) => {
+  
+  // Vector from a to b
+  var ab = sub(b.p, a.p);
+  
+  // If the spheres collide
+  if(mags(ab) &lt; (a.r + b.r) ** 2){
+    
+    // normal
+    ab = norm(ab);
+    
+    // Contact
+    return {
+      n: ab, // collision normal (from a to b)
+      a,  // body a
+      b,  // body b
+      pa: add(a.p, scale(ab, a.r)), // collision point on a, in world space
+      pb: sub(b.p, scale(ab, b.r)), // collision point on b, in world space
+    };
+  }
+  return false;
+}
+
+<b>// Scene update</b>
+
+Scene.update = (dt) => {
+  var i, j;
+
+  // Apply gravity as an impulse
+  for(var i of Scene.b){     
+    i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
+  }
+
+  // Check collisions
+  for(i = 0; i &lt; Scene.b.length; i++){
+    for(var j = i+1; j &lt; Scene.b.length; j++){
+      console.log(Scene.b[i].im,Scene.b[j].im);
+      if(Scene.b[i].im != 0 || Scene.b[j].im != 0){      
+        if(collisionSphereSphere(Scene.b[i], Scene.b[j])){
+          
+          // Set the velocity to zero (for now)
+          Scene.b[i].lv = new DOMPoint(0,0,0);
+          Scene.b[j].lv = new DOMPoint(0,0,0);
+        }
+      }
+    }
+  }
+  
+  // Update position
+  for(i of Scene.b){
+    i.p = add(i.p, scale(i.lv, dt));
+  }
+}</code>
+
 <p><b>Demo</b>
 <p><iframe src=demo8.html width=640 height=410 frameborder=no></iframe>
 
@@ -237,36 +310,145 @@ Scene.updateRender : () => { /* ... */ } </code>
 
 <h2>9. Contact and projection method</h2>
 <p>To separate the bodies properly, we first need the collision method to return a contact object (see collision.js).
-<br>Then, the contact is resolved by moving the objects outside of each other, proportionnally to their masses (see scene.js).
+<br>Then, we resolve the contact by moving the objects apart, proportionnally to their masses (see scene.js).
+<br>A resolve function is added to work on the collision resolution outside of Scene.update.
+
+<p><code class=f><b>// Sphere-sphere collision</b>
+
+collisionSphereSphere = (a, b) => {
+  
+  // ...
+  
+  // If the spheres collide
+  if(mags(ab) &lt; (a.r + b.r) ** 2){
+    
+    // normal
+    ab = norm(ab);
+    
+    // Contact
+    return {
+      n: ab, // collision normal (from a to b)
+      a,  // body a
+      b,  // body b
+      pa: add(a.p, scale(ab, a.r)), // collision point on a, in world space
+      pb: sub(b.p, scale(ab, b.r)), // collision point on b, in world space
+    };
+  }
+  
+  // No collision
+  return false;
+}
+
+<b>// Scene</b>
+
+Scene.update = dt => {
+    
+    var i, j, contat;
+  
+    // Apply gravity as an impulse
+    for(var i of Scene.b){     
+      i.applyImpulseLinear(scale(new DOMPoint(0, -10, 0), dt / i.im));
+    }
+
+    // Check collisions
+    for(i = 0; i &lt; Scene.b.length; i++){
+      for(var j = i+1; j &lt; Scene.b.length; j++){
+        if(Scene.b[i].im != 0 || Scene.b[j].im != 0){      
+          if(contact = collisionSphereSphere(Scene.b[i], Scene.b[j])){
+            resolve(contact);
+          }
+        }
+      }
+    }
+    
+    // Update position
+    for(i of Scene.b){
+      i.p = add(i.p, scale(i.lv, dt));
+    }
+  },
+  
+  // Rendering (exampe of implementation in renderer/render.js)
+  render: () => {},
+}
+
+<b>// Resolve a contact</b>
+
+resolve = contact => {
+  
+  // Zero the linear velocity
+  contact.a.lv = new DOMPoint(0,0,0);
+  contact.b.lv = new DOMPoint(0,0,0);
+  
+  // Move the objects outside of each other
+  var ds = sub(contact.pb, contact.pa); 
+  contact.a.p = add(contact.a.p, scale(ds, contact.a.im / (contact.a.im + contact.b.im)));
+  contact.b.p = add(contact.b.p, scale(ds, contact.b.im / (contact.a.im + contact.b.im)));
+}</code>
+
 <p><b>Demo</b>
 <p><iframe src=demo9.html width=640 height=420 frameborder=no></iframe>
 
 
 
 <h2>10. Conservation of momentum</h2>
-<p>Instead of zeroing the velocity of each colliding object, we are going to apply impulses in the opposite direction. (see scene.js)
-<br>Without other modifications, the bouncing will remain constant, or vary a little because of rounding errors.
+<p>Instead of zeroing the velocity of colliding objects, we are going to apply impulses in the opposite direction.
+<br>The resolve function applies an impulse equal to the product of the two objects' elasticities.
+<br>Without other modifications, the bouncing will remain constant (or vary a little because of rounding errors).
 <br>A more realistic bouncing would lose a bit of energy after each collision.
+
+<p><code class=f><b>// Resolve a contact</b>
+resolve = contact => {
+  
+  // Elasticity
+  var e = contact.a.e * contact.b.e;
+  
+  // Collision impulse
+  var vj = scale(
+    contact.n,
+    -(1 + e) * dot(
+      sub(contact.a.lv, contact.b.lv),
+      contact.n
+    ) / (contact.a.im + contact.b.im)
+  );
+  contact.a.applyImpulseLinear(vj);
+  contact.b.applyImpulseLinear(scale(vj, -1));
+  
+  // Move the objects outside of each other
+  //...
+}</code>
+
+<p><b>Demo</b>
+
 <!--p><b><a href=demo10.html target=_blank>See the demo</a></b-->
 <p><iframe src=demo10.html width=640 height=420 frameborder=no></iframe>
 
 
 <h2>11. Elasticity</h2>
-<p>A collistion that perfectly conserves the kinetic energy is elastic. If it loses some at each collision, it's inelastic.
-<br>The elasticity of an object is also known as constitution, restitution or bounciness and is a number between 0 (least perfect) and 1 (most perfect).
-<br>The Body class gets a new elasticity value (e). (see body.js)
-<br>To make things simple, the resolve function applies the product of the two objects' elasticities. (see scene.js)
-<br>After a few seconds, the "final" position of the ball will remain shaky due to constant recomputations and rounding errors.
-<br>It is usually fixed by ignoring impulses smaller than a minimum threshold (ex: 0.1).
+<p>A collision that perfectly conserves the kinetic energy is called elastic.
+<br>If it loses some energy at each collision, it's called inelastic.
+<br>The elasticity of an object (also known as restitution or bounciness) is a number between 0 and 1.
+<br>Let's add an elasticity value (e) in the Body class.
+<br>The "final" position of the ball will remain shaky due to constant recomputations and rounding errors.
+<br>It is usually fixed by ignoring impulses smaller than a minimum threshold.
 <br>Note: in rigid body simulations, elasticity only adds bounciness, it does not deform (squish) the bouncing objects.
 <p><b>Demo</b>
-<p><iframe src=demo11.html width=640 height=540 frameborder=no></iframe>
+<p><iframe src=demo11.html width=640 height=680 frameborder=no></iframe>
 
 
 
+<h2>12. Angular velocity</h2>
+<p>To add rotations, we will introduce torque and angular momentum.
+<br>Angular acceleration and angular velocity are computed similarly to acceleration velocity.
+<br>Torque is to angular momentum what force is to momentum.
+<br>The inertia tensor <b>I</b> is a 3x3 matrix, in model space, specific for each shape.
+<br>For spheres, it's a matrix of zeroes with <b>2/5*m*r²</b> on the diagonal.
+<br>To convert it from model space to world space coordinates, we do: <b>o * I * o<sup>-1</sup></b>.
+<br>But since o is only a rotation matrix, its transpose is equal to its inverse, and easier to compute: <b>o * I * o<sup>T</sup></b>.
 
 
 
+<h2>13. General impulses</h2>
+<p>
 
 
 

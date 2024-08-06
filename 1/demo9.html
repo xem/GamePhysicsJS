@@ -38,8 +38,6 @@ Scene = {
   
   // Rendering (exampe of implementation in renderer/render.js)
   render: () => {},
-  updateRender : () => {} 
-
 }
 
 // Resolve a contact
@@ -85,7 +83,7 @@ Scene.render(canvas);
 play.onclick=()=>{
   setInterval(()=>{
     Scene.update(1/60);
-    Scene.updateRender();
+    Scene.render();
   }, 1/60);
 }
 </script>

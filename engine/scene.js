@@ -33,7 +33,6 @@ Scene = {
   
   // Render (optional implementation in renderer/render.js)
   render: () => {},
-  updateRender : () => {} 
 
 }
 

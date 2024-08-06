@@ -24,7 +24,7 @@ Scene.update = (dt) => {
 }
 </script>
 
-<script>
+<script hidden>
 // Ball
 Scene.b.push(new Sphere({
   id: "ball",                 // id
@@ -33,6 +33,8 @@ Scene.b.push(new Sphere({
   r: 1,                       // radius
 }));
 
+</script>
+<script>
 // Ground
 Scene.b.push(new Sphere({
   id: "ground",               // id    
@@ -48,7 +50,7 @@ Scene.render(canvas);
 play.onclick=()=>{
   setInterval(()=>{
     Scene.update(1/60);
-    Scene.updateRender();
+    Scene.render();
   }, 1/60);
 }
 </script>
