@@ -1,6 +1,7 @@
 ﻿<script src="../engine/vec.js"></script>
 <script src="../engine/quat.js"></script>
 <script src="../engine/body.js"></script>
+
 <script hidden>
 // Scene
 // =====
@@ -54,6 +55,7 @@ collisionSphereSphere = (a, b) => {
 </script>
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
+<script src="../renderer/texture.js"></script>
 
 <button id=play>PLAY</button> <button onclick=location=location>RESET</button>
 <canvas id=canvas width=600 height=400></canvas>
@@ -70,7 +72,6 @@ Scene.update = (dt) => {
   // Check collisions
   for(i = 0; i < Scene.b.length; i++){
     for(var j = i+1; j < Scene.b.length; j++){
-      console.log(Scene.b[i].im,Scene.b[j].im);
       if(Scene.b[i].im != 0 || Scene.b[j].im != 0){      
         if(collisionSphereSphere(Scene.b[i], Scene.b[j])){
           Scene.b[i].lv = new DOMPoint(0,0,0);

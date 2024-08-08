@@ -21,7 +21,16 @@ Scene.render = (canvas) => {
     
     // Create sphere 
     if(!(W.next[i.id])){
-      W.sphere({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z,size:i.r,s:1,b:"#88FFaaFF"});
+      
+      // Ball
+      if(i.id == "ball"){
+        W.sphere({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z,size:i.r,s:1,ry:100,t:ball});
+      }
+      
+      // Ground
+      else {
+        W.sphere({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z,size:i.r,s:1,b:"#88FFaaFF"});
+      }
     }
     
     // Move sphere

@@ -82,7 +82,9 @@ transpose = m => {
 
 <h2>4. Quaternions</h2>
 <p>Quaternions are often used in games to represent rotations.
-<br>They contain four components x, y, z, w (representing a rotation axis and an angle).
+<br>They contain four components x, y, z, w.
+<br>x, y, z represent the rotation axis and w the angle.
+<br>In a normalized quaternion, the angle in radians is equal to <b>2 * arccos(w)</b>.
 <br>To save space, the current JS implementation will skip quaternions and use rotation matrices directly.
 
 
@@ -208,6 +210,8 @@ class Body {
   }
   
   // ...
+  
+  // Apply impulse (linear)
   
   applyImpulseLinear(i) {
     if(this.im){
@@ -444,12 +448,110 @@ resolve = contact => {
 <br>For spheres, it's a matrix of zeroes with <b>2/5*m*r²</b> on the diagonal.
 <br>To convert it from model space to world space coordinates, we do: <b>o * I * o<sup>-1</sup></b>.
 <br>But since o is only a rotation matrix, its transpose is equal to its inverse, and easier to compute: <b>o * I * o<sup>T</sup></b>.
+<p><code class=f>class Body {
+
+  // ...
+
+  // Apply impulse (angular)
+  applyImpulseAngular(i){
+    if(this.im){
+      this.av = inverseInertiaTensorWorld().transformPoint(impulse);
+      var max = 30; // max: 30 rad/s (modifiable)
+      if(mags(this.av) > max ** 2){
+        this.av = scale(norm(this.av), max);
+      }
+    }
+  }
+    
+  // Inverse inertia tensor in model space
+  inverseInertiaTensorModel(){
+    return inverseInertiaTensor();
+  }
+  
+  // Inverse inertia tensor in world space
+  inverseInertiaTensorWorld(){
+    return this.o.multiply(inverseInertiaTensor()).multiply(transpose(this.o));
+  }
+}
+
+class Sphere extends Body {
+
+  // ...
+  
+  // Inverse inertia tensor
+  
+  inverseInertiaTensor(){
+    var m = new DOMMatrix;
+    m.m11 = m.m22 = m.m33 = 2 * (1 / this.im) * (this.radius ** 2) / 5;
+    return m.inverse();
+  }
+}</code>
 
 
 
 <h2>13. General impulses</h2>
-<p>
+<p>Let's see impulses not applied to the center of the body.
+<br>This is where the center of mass becomes important.
+<br>(Though, for spheres, it is always equivalent to the body's position).
+<br>We also add an update function in the body class, which will be called by Scene.update, and will compute the body's position and orientation.
+<br>Contrary to the position, the orientation is computed by multiplication.
+<p><code class=f><b>// Body</b>
 
+class Body {
+
+  // ...
+   
+  // Apply impulse on a specific point (defined in world space)
+  applyImpulse(p, i){
+    this.applyImpulseLinear(i);
+    this.applyImpulseAngular(cross(sub(p, this.position), i));
+  }
+  
+  // Update position and orientation
+  update(dt){
+    
+    // Position
+    this.p = add(this.p, scale(this.lv, dt));
+    
+    // Orientation
+    // Convert the angular velocity, around the center of mass, relatively to the model position 
+    var pCM = this.cWorld;
+    var ctop = sub(this.p, pCM);
+    
+    // Compute torque
+    var iT = this.o.mutiply(this.inertiaTensor()).multiply(transpose(this.o));
+    var alpha = iT.inverse().multiply(cross(this.av, iT.transformPoint(this.av)));
+    this.av = add(this.av, scale(alpha, dt));
+    
+    // Update orientation
+    var dA = scale(this.av, dt);
+    this.o = this.o.rotateAxisAngle(dA, mag(dA));
+    
+    // New model position
+    this.p = pCM + dq.transformPoint(cmToPos);
+  }
+}
+
+<b>// Scene</b>
+Scene.update = (dt) => {
+  
+  // ...
+  
+  // Update body position and rotation
+  for(i of Scene.b){
+    i.update(dt);
+  }
+}</code>
+
+
+
+<h2>14. Angular collision impulse</h2>
+<p>We are going to update the contact resolution function to include angular velocity.
+
+
+
+<h2>15. Friction</h2>
+<p>Sliding friction is a force that prevents two objects to slide infinitely on each other.
 
 
 <style>

@@ -6,7 +6,6 @@ debug = 0; // Enable shader/program compilation logs (optional)
 W = {
   
   // List of ids
-  //ids: {}
   
   // List of 3D models that can be rendered by the framework
   // (See the end of the file for built-in models: plane, billboard, cube, pyramid...)

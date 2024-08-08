@@ -1,16 +1,37 @@
 ﻿<script src="../engine/vec.js"></script>
+<script src="../engine/matrix.js"></script>
 <script src="../engine/quat.js"></script>
 <script src="../engine/body.js"></script>
 <script src="../engine/collision.js"></script>
 <script src="../engine/scene.js"></script>
 <script src="../renderer/render.js"></script>
 <script src="../renderer/w.js"></script>
+<script src="../renderer/texture.js"></script>
 
 <button id=play>PLAY</button> <button onclick=location=location>RESET</button> <button id=offset hidden>OFFSET</button>
 <canvas id=canvas width=600 height=400></canvas>
 
 
 <script hidden>
+
+// Resolve a contact
+resolve = contact => {
+  
+  // Elasticity
+  var e = contact.a.e * contact.b.e;
+  
+  // Collision impulse
+  var vj = scale(contact.n, -(1 + e) * dot(sub(contact.a.lv, contact.b.lv), contact.n) / (contact.a.im + contact.b.im));
+  contact.a.applyImpulseLinear(vj);
+  contact.b.applyImpulseLinear(scale(vj, -1));
+  
+  // Move the objects outside of each other
+  var ds = sub(contact.pb, contact.pa); 
+  contact.a.p = add(contact.a.p, scale(ds, contact.a.im / (contact.a.im + contact.b.im)));
+  contact.b.p = add(contact.b.p, scale(ds, contact.b.im / (contact.a.im + contact.b.im)));
+}
+
+
 // Ball
 Scene.b.push(new Sphere({
   id: "ball",                 // id

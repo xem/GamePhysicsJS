@@ -9,9 +9,10 @@ class Body {
   o;  // orientation (DOMMatrix)
   c;  // center of mass (DOMPoint, in model space)
   im; // inverse mass (0 = immovable)
-  lv; // linear velocity
-  av; // angular velocity
-  e;  // elasticity
+  lv; // linear velocity (DOMPoint)
+  av; // angular velocity (DOMPoint)
+  e;  // elasticity (number)
+  f;  // friction (number)
   
   constructor(params){
     this.id = params.id ?? "b" + (scene.b.length);
@@ -23,6 +24,7 @@ class Body {
     this.lv = params.lv ?? new DOMPoint;
     this.av = params.lv ?? new DOMPoint;
     this.e = params.e ?? 1;
+    this.f = params.f ?? 0;
   }
   
   // Center of mass in world space
@@ -55,13 +57,18 @@ class Body {
   // Apply impulse (angular)
   applyImpulseAngular(i){
     if(this.im){
-      this.av = inverseInertiaTensorWorld().transformPoint(impulse);
+      this.av = this.inverseInertiaTensorWorld().transformPoint(i);
       var max = 30; // max: 30 rad/s (modifiable)
       if(mags(this.av) > max ** 2){
         this.av = scale(norm(this.av), max);
       }
-      
     }
+  }
+  
+  // Apply impulse on a specific point (defined in world space)
+  applyImpulse(p, i){
+    this.applyImpulseLinear(i);
+    //this.applyImpulseAngular(cross(sub(p, this.p), i));
   }
   
   // Inverse inertia tensor in model space
@@ -71,9 +78,33 @@ class Body {
   
   // Inverse inertia tensor in world space
   inverseInertiaTensorWorld(){
-    return this.o.multiply(inverseInertiaTensor()).multiply(transpose(this.o));
+    //console.log(this.o, this.inverseInertiaTensor(), transpose(this.o));
+    return this.o.multiply(this.inverseInertiaTensor()).multiply(transpose(this.o));
   }
 
+  // Update position and orientation
+  update(dt){
+    
+    // Position
+    this.p = add(this.p, scale(this.lv, dt));
+    
+    /*// Orientation
+    // Convert the angular velocity, around the center of mass, relatively to the model position 
+    var pCM = this.cWorld;
+    var ctop = sub(this.p, pCM);
+    
+    // Compute torque
+    var iT = this.o.multiply(this.inertiaTensor()).multiply(transpose(this.o));
+    var alpha = iT.inverse().multiply(cross(this.av, iT.transformPoint(this.av)));
+    this.av = add(this.av, scale(alpha, dt));
+    
+    // Update orientation
+    var dA = scale(this.av, dt);
+    this.o = this.o.rotateAxisAngle(dA, mag(dA));
+    
+    // New model position
+    this.p = pCM + this.o.transformPoint(ctop);*/
+  }
 }
 
 // Sphere
@@ -85,9 +116,14 @@ class Sphere extends Body {
     this.r = params.r ?? 1;
   }
   
-  inverseInertiaTensor(){
+  inertiaTensor(){
     var m = new DOMMatrix;
-    m.m11 = m.m22 = m.m33 = 2 * (1 / this.im) * (this.radius ** 2) / 5;
-    return m.inverse();
+    m.m11 = m.m22 = m.m33 = 2 * (1 / this.im) * (this.r ** 2) / 5;
+    return m
+  }
+  
+  inverseInertiaTensor(){
+    console.log(this.inertiaTensor(), this.inertiaTensor().inverse());
+    return this.inertiaTensor().inverse();
   }
 }
