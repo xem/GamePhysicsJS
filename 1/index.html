@@ -447,7 +447,7 @@ resolve = contact => {
 <br>The inertia tensor <b>I</b> is a 3x3 matrix, in model space, specific for each shape.
 <br>For spheres, it's a matrix of zeroes with <b>2/5*m*r²</b> on the diagonal.
 <br>To convert it from model space to world space coordinates, we do: <b>o * I * o<sup>-1</sup></b>.
-<br>But since o is only a rotation matrix, its transpose is equal to its inverse, and easier to compute: <b>o * I * o<sup>T</sup></b>.
+<br>But since o is a rotation matrix, its transpose is equal to its inverse, and easier to compute: <b>o * I * o<sup>T</sup></b>.
 <p><code class=f>class Body {
 
   // ...
@@ -455,7 +455,7 @@ resolve = contact => {
   // Apply impulse (angular)
   applyImpulseAngular(i){
     if(this.im){
-      this.av = inverseInertiaTensorWorld().transformPoint(impulse);
+      this.av = inverseInertiaTensorWorld().transformPoint(i);
       var max = 30; // max: 30 rad/s (modifiable)
       if(mags(this.av) > max ** 2){
         this.av = scale(norm(this.av), max);
@@ -542,6 +542,9 @@ Scene.update = (dt) => {
     i.update(dt);
   }
 }</code>
+
+<p><b>Demo</b>
+<p><iframe src=demo13.html width=640 height=420 frameborder=no></iframe>
 
 
 

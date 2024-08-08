@@ -1,0 +1,78 @@
+﻿<script src="../engine/vec.js"></script>
+<script src="../engine/matrix.js"></script>
+<script src="../engine/quat.js"></script>
+<script src="../engine/body.js"></script>
+<script src="../engine/collision.js"></script>
+<script src="../engine/scene.js"></script>
+<script src="../renderer/render.js"></script>
+<script src="../renderer/w.js"></script>
+<script src="../renderer/texture.js"></script>
+
+<button id=play>PLAY</button> <button onclick=location=location>RESET</button>  <button id=impulse>ADD ANGULAR IMPULSE</button>
+<canvas id=canvas width=600 height=400></canvas>
+
+<script hidden>
+// Resolve a contact
+resolve = contact => {
+  
+  // Elasticity
+  var e = contact.a.e * contact.b.e;
+  
+  // Collision impulse
+  var vj = scale(contact.n, -(1 + e) * dot(sub(contact.a.lv, contact.b.lv), contact.n) / (contact.a.im + contact.b.im));
+  contact.a.applyImpulseLinear(vj);
+  contact.b.applyImpulseLinear(scale(vj, -1));
+  
+  // Move the objects outside of each other
+  var ds = sub(contact.pb, contact.pa); 
+  contact.a.p = add(contact.a.p, scale(ds, contact.a.im / (contact.a.im + contact.b.im)));
+  contact.b.p = add(contact.b.p, scale(ds, contact.b.im / (contact.a.im + contact.b.im)));
+}
+</script>
+
+<script hidden>
+// Ball
+Scene.b.push(new Sphere({
+  id: "ball",                 // id
+  p: new DOMPoint(0,3.6,0),   // position
+  im: 1,                      // inverse mass
+  r: 1,                       // radius
+  e: 0.98,                    // elasticity
+}));
+
+// Ground
+Scene.b.push(new Sphere({
+  id: "ground",               // id    
+  p: new DOMPoint(0,-102,0),  // position
+  im: 0,                      // inverse mass
+  r: 100,                     // radius
+  e: 1,                       // elasticity
+}));
+
+// Render
+Scene.render(canvas);
+
+// Update
+play.onclick=()=>{
+  play.onclick=()=>{}
+  setInterval(()=>{
+    Scene.update(1/60);
+    Scene.render();
+    //console.log(Scene.b[0].av, Scene.b[0].o);
+  }, 1/60);
+}
+
+impulse.onclick = () => {
+  impulse.remove();
+  Scene.b[0].applyImpulseAngular(new DOMPoint(0,0,-50));
+}
+</script>
+
+<style>
+body { margin: 0 }
+script,code { display: block; white-space: pre; font: 12px courier; position: absolute; bottom: 0; padding: 0 10px 10px; line-height: .9; background: #fed; width: 580px;}
+script[hidden] { display: none }
+button { position: absolute; top: 10px; left: 10px; }
+button + button { position: absolute; top: 10px; left: 70px; }
+button + button + button { position: absolute; top: 10px; left: 140px; }
+</style>

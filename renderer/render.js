@@ -24,7 +24,7 @@ Scene.render = (canvas) => {
       
       // Ball
       if(i.id == "ball"){
-        W.sphere({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z,size:i.r,s:1,ry:100,t:ball});
+        W.sphere({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z,size:i.r,s:1,ry:100,t:ball,o:i.o});
       }
       
       // Ground
@@ -35,7 +35,7 @@ Scene.render = (canvas) => {
     
     // Move sphere
     else {
-      W.move({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z});
+      W.move({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z,o:i.o});
     }
   }
 }

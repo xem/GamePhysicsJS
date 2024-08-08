@@ -433,7 +433,7 @@ W = {
     W.next[item]
     ? m
       .translateSelf(W.lerp(item, 'x'), W.lerp(item, 'y'), W.lerp(item, 'z'))
-      .rotateSelf(W.lerp(item, 'rx'),W.lerp(item, 'ry'),W.lerp(item, 'rz'))
+      .multiplySelf(W.next[item].o)
       .scaleSelf(W.lerp(item, 'w'),W.lerp(item, 'h'),W.lerp(item, 'd'))
     : m,
     

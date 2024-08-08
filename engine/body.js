@@ -1,5 +1,6 @@
 ﻿// Body
 // ====
+cnt = 0; // debug
 
 // Body
 class Body {
@@ -84,26 +85,27 @@ class Body {
 
   // Update position and orientation
   update(dt){
-    
-    // Position
-    this.p = add(this.p, scale(this.lv, dt));
-    
-    /*// Orientation
-    // Convert the angular velocity, around the center of mass, relatively to the model position 
-    var pCM = this.cWorld;
-    var ctop = sub(this.p, pCM);
-    
-    // Compute torque
-    var iT = this.o.multiply(this.inertiaTensor()).multiply(transpose(this.o));
-    var alpha = iT.inverse().multiply(cross(this.av, iT.transformPoint(this.av)));
-    this.av = add(this.av, scale(alpha, dt));
-    
-    // Update orientation
-    var dA = scale(this.av, dt);
-    this.o = this.o.rotateAxisAngle(dA, mag(dA));
-    
-    // New model position
-    this.p = pCM + this.o.transformPoint(ctop);*/
+    if(this.im){
+      // Position
+      this.p = add(this.p, scale(this.lv, dt));
+      
+      // Orientation
+      // Convert the angular velocity, around the center of mass, relatively to the model position 
+      var pCM = this.cWorld(); // center of mass in world space
+      var ctop = sub(this.p, pCM);
+      
+      // Compute torque
+      var iT = transpose(this.o).multiply(this.inertiaTensor()).multiply(this.o);
+      var alpha = iT.inverse().transformPoint(cross(this.av, iT.transformPoint(this.av)));
+      this.av = add(this.av, scale(alpha, dt));
+      
+      // Update orientation
+      var dA = scale(this.av, dt);
+      this.o = this.o.rotateAxisAngle(dA.x, dA.y, dA.z, mag(dA));
+      
+      // New model position
+      this.p = add(pCM, this.o.transformPoint(ctop));
+    }
   }
 }
 
@@ -123,7 +125,6 @@ class Sphere extends Body {
   }
   
   inverseInertiaTensor(){
-    console.log(this.inertiaTensor(), this.inertiaTensor().inverse());
     return this.inertiaTensor().inverse();
   }
 }
