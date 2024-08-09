@@ -76,12 +76,12 @@ class Body {
   
   // Inverse inertia tensor in model space
   inverseInertiaTensorModel(){
-    return inverseInertiaTensor();
+    return this.inverseInertiaTensor().scale(this.im,this.im,this.im);
   }
   
   // Inverse inertia tensor in world space
   inverseInertiaTensorWorld(){
-    return this.o.multiply(this.inverseInertiaTensor()).multiply(transpose(this.o));
+    return this.o.multiply(this.inverseInertiaTensor().scale(this.im,this.im,this.im)).multiply(transpose(this.o));
   }
 
   // Update position and orientation
@@ -119,11 +119,11 @@ class Sphere extends Body {
     this.r = params.r ?? 1;
   }
   
-  // Inertia tensor
+  // Inertia tensor (2/5 * r² on the diagonals)
   inertiaTensor(){
     var m = new DOMMatrix;
-    m.m11 = m.m22 = m.m33 = 2 * (1 / this.im) * (this.r ** 2) / 5;
-    return m
+    m.m11 = m.m22 = m.m33 = 2 * (this.r ** 2) / 5;
+    return m;
   }
   
   // Inverse inertia tensor

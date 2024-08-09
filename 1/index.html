@@ -568,12 +568,53 @@ Scene.update = (dt) => {
 
 
 <h2>14. Angular collision impulse</h2>
-<p>We are going to update the contact resolution function to include angular velocity.
+<p>Here, we update the contact resolution function to include angular velocity.
+<p><code class=f>
+// Resolve a contact
+resolve = contact => {
+  
+  // Elasticity
+  var e = contact.a.e * contact.b.e;
+  
+  // Inertia tensors in world space
+  var iwa = contact.a.inverseInertiaTensorWorld();
+  var iwb = contact.b.inverseInertiaTensorWorld();
+  
+  // Centers of masses in world space
+  var ra = sub(contact.pa, contact.a.cWorld());
+  var rb = sub(contact.pb, contact.b.cWorld());
+  
+  // Angular impulses
+  var aja = cross(iwa.transformPoint(cross(ra, contact.n)), ra);
+  var ajb = cross(iwb.transformPoint(cross(rb, contact.n)), rb);
+  var af = dot(add(aja, ajb), contact.n);
+  
+  // Get world space velocity of motion and rotation
+  var va = add(contact.a.lv, cross(contact.a.av, ra));
+  var vb = add(contact.b.lv, cross(contact.b.av, rb));
+  
+  // Collision impulse
+  var vab = sub(va, vb);
+  var ij = (1 + e) * dot(vab, contact.n) / (contact.a.im + contact.b.im + af);
+  var vij = scale(contact.n, ij);
+  contact.a.applyImpulse(contact.pa, scale(vij, -1));
+  contact.b.applyImpulse(contact.pb, vij);
 
+  // Move the objects outside of each other
+  var ta = contact.a.im / (contact.a.im + contact.b.im);
+  var tb = contact.b.im / (contact.a.im + contact.b.im);
+  var ds = sub(contact.pb, contact.pa);
+  contact.a.p = add(contact.a.p, scale(ds, ta));
+  contact.b.p = sub(contact.b.p, scale(ds, tb));
+}
+</code>
 
 
 <h2>15. Friction</h2>
-<p>Sliding friction is a force that prevents two objects to slide infinitely on each other.
+<p>Sliding friction is a force that prevents two objects to slide infinitely on each other. It provokes slowing down and rotation (for spheres).
+<p><code class=f>
+
+</code>
 
 
 <style>

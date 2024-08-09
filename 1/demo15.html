@@ -11,52 +11,14 @@
 <canvas id=canvas width=600 height=400></canvas>
 
 <script hidden>
-// Resolve a contact
-resolve = contact => {
-  
-  // Elasticity
-  var e = contact.a.e * contact.b.e;
-  
-  // Inertia tensors in world space
-  var iwa = contact.a.inverseInertiaTensorWorld();
-  var iwb = contact.b.inverseInertiaTensorWorld();
-  
-  // Centers of masses in world space
-  var ra = contact.a.cWorld();
-  var rb = contact.b.cWorld();
-  
-  // Angular impulses
-  var aja = cross(iwa.transformPoint(cross(ra, contact.n)), ra);
-  var ajb = cross(iwb.transformPoint(cross(rb, contact.n)), rb);
-  var af = dot(add(aja, ajb), contact.n);
-  console.log(iwa, cross(ra, contact.n), af);
-  af = 0;
-  
-  // Get world space velocity of motion and rotation
-  var va = contact.a.lv; // add(contact.a.lv, cross(contact.a.av, ra));
-  var vb = contact.b.lv; //add(contact.b.lv, cross(contact.b.av, rb));
-  
-  // Collision impulse
-  var vab = sub(va, vb);
-  var ij = -(1 + e) * dot(sub(contact.a.lv, contact.b.lv), contact.n) / (contact.a.im + contact.b.im + af);
-  var vij = scale(contact.n, ij);
-  contact.a.applyImpulse(contact.pa, vij);
-  contact.b.applyImpulse(contact.pb, scale(vij, -1));
-  
-  // Move the objects outside of each other
-  var ds = sub(contact.pb, contact.pa);
-  var ta = contact.a.im / (contact.a.im + contact.b.im);
-  var tb = contact.b.im / (contact.a.im + contact.b.im);
-  contact.a.p = add(contact.a.p, scale(ds, ta));
-  contact.b.p = add(contact.b.p, scale(ds, tb));
-}
+
 </script>
 
 <script>
 // Ball
 Scene.b.push(new Sphere({
   id: "ball",                 // id
-  p: new DOMPoint(-3,1,0),     // position
+  p: new DOMPoint(-3,1,0),    // position
   im: 1,                      // inverse mass
   r: 1,                       // radius
   e: 0,                       // elasticity
