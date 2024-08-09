@@ -33,7 +33,7 @@ class Body {
     return add(this.p, this.o.transformPoint(this.c));
   }
   
-  // Center of mass if model space
+  // Center of mass in model space
   cModel(){
     return this.c;
   }
@@ -68,8 +68,10 @@ class Body {
   
   // Apply impulse on a specific point (defined in world space)
   applyImpulse(p, i){
-    this.applyImpulseLinear(i);
-    //this.applyImpulseAngular(cross(sub(p, this.p), i));
+    if(this.im){
+      this.applyImpulseLinear(i);
+      this.applyImpulseAngular(cross(sub(p, this.cWorld()), i));
+    }
   }
   
   // Inverse inertia tensor in model space
@@ -79,7 +81,6 @@ class Body {
   
   // Inverse inertia tensor in world space
   inverseInertiaTensorWorld(){
-    //console.log(this.o, this.inverseInertiaTensor(), transpose(this.o));
     return this.o.multiply(this.inverseInertiaTensor()).multiply(transpose(this.o));
   }
 
@@ -95,7 +96,7 @@ class Body {
       var ctop = sub(this.p, pCM);
       
       // Compute torque
-      var iT = transpose(this.o).multiply(this.inertiaTensor()).multiply(this.o);
+      var iT = this.o.multiply(this.inertiaTensor()).multiply(transpose(this.o));
       var alpha = iT.inverse().transformPoint(cross(this.av, iT.transformPoint(this.av)));
       this.av = add(this.av, scale(alpha, dt));
       
@@ -118,12 +119,14 @@ class Sphere extends Body {
     this.r = params.r ?? 1;
   }
   
+  // Inertia tensor
   inertiaTensor(){
     var m = new DOMMatrix;
     m.m11 = m.m22 = m.m33 = 2 * (1 / this.im) * (this.r ** 2) / 5;
     return m
   }
   
+  // Inverse inertia tensor
   inverseInertiaTensor(){
     return this.inertiaTensor().inverse();
   }

@@ -455,7 +455,7 @@ resolve = contact => {
   // Apply impulse (angular)
   applyImpulseAngular(i){
     if(this.im){
-      this.av = inverseInertiaTensorWorld().transformPoint(i);
+      this.av = this.inverseInertiaTensorWorld().transformPoint(i);
       var max = 30; // max: 30 rad/s (modifiable)
       if(mags(this.av) > max ** 2){
         this.av = scale(norm(this.av), max);
@@ -470,7 +470,7 @@ resolve = contact => {
   
   // Inverse inertia tensor in world space
   inverseInertiaTensorWorld(){
-    return this.o.multiply(inverseInertiaTensor()).multiply(transpose(this.o));
+    return this.o.multiply(this.inverseInertiaTensor()).multiply(transpose(this.o));
   }
 }
 
@@ -478,12 +478,16 @@ class Sphere extends Body {
 
   // ...
   
-  // Inverse inertia tensor
-  
-  inverseInertiaTensor(){
+  // Inertia tensor
+  inertiaTensor(){
     var m = new DOMMatrix;
-    m.m11 = m.m22 = m.m33 = 2 * (1 / this.im) * (this.radius ** 2) / 5;
-    return m.inverse();
+    m.m11 = m.m22 = m.m33 = 2 * (1 / this.im) * (this.r ** 2) / 5;
+    return m
+  }
+  
+  // Inverse inertia tensor
+  inverseInertiaTensor(){
+    return this.inertiaTensor().inverse();
   }
 }</code>
 
@@ -501,34 +505,49 @@ class Body {
 
   // ...
    
+  // Center of mass in world space
+  cWorld(){
+    return add(this.p, this.o.transformPoint(this.c));
+  }
+  
+  // Center of mass in model space
+  cModel(){
+    return this.c;
+  }
+  
   // Apply impulse on a specific point (defined in world space)
   applyImpulse(p, i){
-    this.applyImpulseLinear(i);
-    this.applyImpulseAngular(cross(sub(p, this.position), i));
+    if(this.im){
+      this.applyImpulseLinear(i);
+      this.applyImpulseAngular(cross(sub(p, this.cWorld()), i));
+    }
   }
   
   // Update position and orientation
   update(dt){
+  
+    if(this.im){ // I added this because the infinite mass ground sphere caused errors
     
-    // Position
-    this.p = add(this.p, scale(this.lv, dt));
+      // Position
+      this.p = add(this.p, scale(this.lv, dt));
     
-    // Orientation
-    // Convert the angular velocity, around the center of mass, relatively to the model position 
-    var pCM = this.cWorld;
-    var ctop = sub(this.p, pCM);
-    
-    // Compute torque
-    var iT = this.o.mutiply(this.inertiaTensor()).multiply(transpose(this.o));
-    var alpha = iT.inverse().multiply(cross(this.av, iT.transformPoint(this.av)));
-    this.av = add(this.av, scale(alpha, dt));
-    
-    // Update orientation
-    var dA = scale(this.av, dt);
-    this.o = this.o.rotateAxisAngle(dA, mag(dA));
-    
-    // New model position
-    this.p = pCM + dq.transformPoint(cmToPos);
+      // Orientation
+      // Convert the angular velocity, around the center of mass, relatively to the model position 
+      var pCM = this.cWorld(); // center of mass in world space
+      var ctop = sub(this.p, pCM);
+      
+      // Compute torque
+      var iT = this.o.multiply(this.inertiaTensor()).multiply(transpose(this.o));
+      var alpha = iT.inverse().transformPoint(cross(this.av, iT.transformPoint(this.av)));
+      this.av = add(this.av, scale(alpha, dt));
+      
+      // Update orientation
+      var dA = scale(this.av, dt);
+      this.o = this.o.rotateAxisAngle(dA.x, dA.y, dA.z, mag(dA));
+      
+      // New model position
+      this.p = add(pCM, this.o.transformPoint(ctop));
+    }
   }
 }
 
@@ -537,7 +556,7 @@ Scene.update = (dt) => {
   
   // ...
   
-  // Update body position and rotation
+  // Update body position and rotation (call body.update)
   for(i of Scene.b){
     i.update(dt);
   }
