@@ -35,6 +35,9 @@ Scene.render = (canvas) => {
     
     // Move sphere
     else {
+      if(i.id == "ball"){
+        console.log(i.o);
+      }
       W.move({n:i.id,x:i.p.x,y:i.p.y,z:i.p.z,o:i.o});
     }
   }

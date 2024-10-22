@@ -67,10 +67,11 @@ resolve = contact => {
   var vab = sub(va, vb);
   var ij = (1 + e) * dot(vab, contact.n) / (contact.a.im + contact.b.im + af);
   var vij = scale(contact.n, ij);
+  console.log(vij);
   contact.a.applyImpulse(contact.pa, scale(vij, -1));
   contact.b.applyImpulse(contact.pb, vij);
   
-  /*// Compute friction impulse
+  // Compute friction impulse
   var f = contact.a.f * contact.b.f;
   var vn = scale(contact.n, dot(contact.n, vab));
   var vt = sub(vab, vn);
@@ -81,8 +82,7 @@ resolve = contact => {
   var rm = 1 / (contact.a.im + contact.b.im + ii);
   var fi = scale(vt, rm * f);
   contact.a.applyImpulse(contact.pa, scale(fi, -1));
-  contact.b.applyImpulse(contact.pb, fi);*/
-
+  contact.b.applyImpulse(contact.pb, fi);
   
   // Move the objects outside of each other
   var ta = contact.a.im / (contact.a.im + contact.b.im);

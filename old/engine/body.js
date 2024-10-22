@@ -58,11 +58,12 @@ class Body {
   // Apply impulse (angular)
   applyImpulseAngular(i){
     if(this.im){
-      this.av = this.inverseInertiaTensorWorld().transformPoint(i);
-      var max = 30; // max: 30 rad/s (modifiable)
+      console.log(i);
+      this.av = add(this.av, this.inverseInertiaTensorWorld().transformPoint(i));
+      /*var max = 30; // max: 30 rad/s (modifiable)
       if(mags(this.av) > max ** 2){
         this.av = scale(norm(this.av), max);
-      }
+      }*/
     }
   }
   
@@ -96,7 +97,7 @@ class Body {
       var ctop = sub(this.p, pCM);
       
       // Compute torque
-      var iT = this.o.multiply(this.inertiaTensor()).multiply(transpose(this.o));
+      var iT = transpose(this.o).multiply(this.inertiaTensor()).multiply(this.o);
       var alpha = iT.inverse().transformPoint(cross(this.av, iT.transformPoint(this.av)));
       this.av = add(this.av, scale(alpha, dt));
       
