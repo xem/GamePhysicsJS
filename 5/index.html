@@ -1,0 +1,82 @@
+﻿<title>Game Physics JS: Adding general forces</title>
+<h1>Game Physics JS: Adding general forces</h1>
+
+<h2>D'alembert's principle</h2>
+<p>All the forces applied to an object can be summed to make a single, equivalent force.
+
+<h2>Force generators</h2>
+<p>The gravity is easy to implement as it is constant and always present.
+<p>Other forces can vary according to the object's state (drag, buoyancy...), user inputs, links with other objects or time.
+
+<!--p>We can create a generic force generator to handle them, however for simplicity, gravity and damping are applied directly in the <b>integrate</b> function.-->
+
+<p><b>JavaScript implementation</b>
+
+<p><code><b>// Gravity</b>
+gravity = Vector3(0, -10, 0);
+
+<b>// Particle</b>
+class Particle {
+  position;
+  velocity;
+  acceleration;
+  damping;
+  inverseMass;
+  forceAccum;
+  
+  <b>// Constructor</b>
+  constructor(position, velocity, acceleration, damping, inverseMass){
+    this.position = position;
+    this.velocity = velocity;
+    this.acceleration = acceleration;
+    this.damping = damping;
+    this.inverseMass = inverseMass;
+  }
+  
+  <b>// Integrate</b>
+  integrate(duration){
+  
+    <b>// We don’t integrate things with infinite mass</b>
+    if(this.inverseMass &lt;= 0) return;
+    
+    <b>// Update linear position</b>
+    this.position.addScaledVector(this.velocity, duration);
+    
+    <b>// Sum forces applied to acceleration (user-defined + gravity)</b>
+    var resultingAcc = this.acceleration;
+    resultingAcc.addScaledVector(this.forceAccum, this.inverseMass);
+    resultingAcc.addScaledVector(gravity, this.inverseMass);
+    
+    <b>// Update linear velocity from the acceleration</b>
+    this.velocity.addScaledVector(resultingAcc, duration);
+    
+    <b>// Impose drag / damping</b>
+    this.velocity.scale(this.damping ** duration);
+    
+    <b>// Reset forces accumulator</b>
+    this.clearAccumulator();
+  }
+  
+  <b>// Add a force</b>
+  addForce(force){
+    this.forceAccum.add(force);
+  }
+  
+  <b>// Clear accumulated forces</b>
+  clearAccumulator(){
+    this.forceAccum = new Vector3(0,0,0);
+  }
+}</code>
+
+<p><br><br><b><a href="../6/index.html">Next</a>
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px;  }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

@@ -1,0 +1,147 @@
+﻿<title>Game Physics JS: The maths of rotations</title>
+<h1>Game Physics JS: The maths of rotations</h1>
+
+<h2>Rotating objects in 2D</h2>
+<p>Orientation represents the angle at which an object is facing.
+<p>Rotation is a change of orientation.
+<p>Angular velocity is the first derivative of orientation with respect to time.
+<p>A vector can represent an orientation:
+<p><code class=f>θ = [cosθ, sinθ]</code>
+<p>Angular speed is a scalar (ex: 4π rad/s).
+<p>An object has an origin and a center of mass.
+<p>If it rotates by an angle <b>θ</b> and translates by an offset <b>p</b>, any point <b>q</b> with a relative position <b>q<sub>b</sub></b> will rotate like this:
+<p><code class=f>q' = ⎡ cosθ -sinθ ⎤ q<sub>b + p</sub>
+     ⎣ sinθ  cosθ ⎦</code>
+<p>This is called a transformation, and <b>q'</b> is the new position of <b>q</b> in world coordinates.
+<p>Any sequence of translations and rotations can be represented with a single transformation (a rotation followed by a translation).
+<p>The simplest origin we can choose for an object is its center of mass (center of gravity).
+<h2>Orientation in 3D</h2>
+<p>Euler angles offer 3 degrees of freedom but have downsides (order of rotations, gimbal lock...).
+<p>Axis-angle (and by extension, Quaternions) gets rid of the Euler angles by specifying a custom axis of rotation and an angle.
+<p>Matrices are the format used by rendering engines (and GPUs) to represent transformations.
+<p>Euler / axis-angle / quaternion rotations can be translated to 3x3 matrices.
+<p>A full transformation (rotation and translation) can be represented with a 4x4 matrix. 
+<p>Quaternions are 4D vectors (with components w,x,y,z) representing an axis-angle rotation like this:
+<p><code class=f>[cos(θ/2), xsin(θ/2), ysin(θ/2), zsin(θ/2)</code>
+<p>With an axis <b>[x, y, z]</b> and angle <b>θ</b>.
+<p>A correct rotation is represented by a <b>normalized</b> quaternion. Its magnitude can also be measured by Pythagore:
+<p><code class=f>sqrt(w²+x²+y²+z²) = 1</code>
+<h2>Angular velocity and acceleration</h2>
+<p>The angular velocity <b>θ̇ </b> af rate <b>r</b> and axis <b>â</b> is equal to:
+<p><code class=f>θ̇ = râ</code>
+<p>To update the orientation quaternion from the angular velocity:
+<p><code class=f>̭θ' = ̭θ + Δt/2 ̭ω̭θ</code>
+<p>With <b>ω̭ = [0, θ̇ x, θ̇ y, θ̇ z]</b> , and the circumflex below " &nbsp;  ̭  " representing a quaternion.
+<p>Note that ̭ω is not an orientation quaternion (and should not be normalized), and ω̭θ̭ is a quaternion multiplication (seen later).
+<p>The velocity of a point on a rotating object is:
+<p><code class=f>q̇  = θ̇  × (q - p) + ṗ </code>
+<p>With a point velocity <b>q̇ </b>, position <b>q</b> (in world coordinates), origin <b>p</b> and angular velocity θ̇ .
+<p>Angular acceleration is the simple derivative of speed:
+<p><code class=f>θ̇ ' = θ̇  + θ̈t</code>
+
+<h2>Implementing the maths</h2>
+
+<p>We will have 3x3 matrices for rotations and 4x4 matrices for full transformations.
+<p>A 3D vector can be rotated by multiplying it by a 3x3 matrix.
+<p><code class=f>v' = Mv</code>
+<p>The effect of two matrices can be combined by multiplying them together.
+
+<p><code>class Matrix3 {
+  data; // 9 elements
+  
+  constructor(data){
+    this.data = data;
+  }
+  
+  // Transform a 3D vector
+  transform(v){
+    return new Vector3(
+      v.x*this.data[0] + v.y*this.data[1] + v.z*this.data[2],
+      v.x*this.data[3] + v.y*this.data[4] + v.z*this.data[5],
+      v.x*this.data[6] + v.y*this.data[7] + v.z*this.data[8],
+    );
+  }
+  
+  // Multiply with another Matrix3
+  multiply(o){
+    return Matrix3([
+      this.data[0]*o.data[0] + this.data[1]*o.data[3] + this.data[2]*o.data[6],
+      this.data[0]*o.data[1] + this.data[1]*o.data[4] + this.data[2]*o.data[7],
+      this.data[0]*o.data[2] + this.data[1]*o.data[5] + this.data[2]*o.data[8],
+      this.data[3]*o.data[0] + this.data[4]*o.data[3] + this.data[5]*o.data[6],
+      this.data[3]*o.data[1] + this.data[4]*o.data[4] + this.data[5]*o.data[7],
+      this.data[3]*o.data[2] + this.data[4]*o.data[5] + this.data[5]*o.data[8],
+      this.data[6]*o.data[0] + this.data[7]*o.data[3] + this.data[8]*o.data[6],
+      this.data[6]*o.data[1] + this.data[7]*o.data[4] + this.data[8]*o.data[7],
+      this.data[6]*o.data[2] + this.data[7]*o.data[5] + this.data[8]*o.data[8]
+    ]);
+  }
+}
+
+class Matrix4 {
+  data; // 12 elements + 3x4 + (0,0,0,1) on the last row
+  
+  constructor(data){
+    this.data = data;
+  }
+  
+  // Transform a 3D vector
+  transform(v){
+    return new Vector3(
+      v.x*this.data[0] + v.y*this.data[1] + v.z*this.data[2] + this.data[3],
+      v.x*this.data[4] + v.y*this.data[5] + v.z*this.data[6] + this.data[7],
+      v.x*this.data[8] + v.y*this.data[9] + v.z*this.data[10] + this.data[11],
+    );
+  }
+  
+  // Multiply with another Matrix4
+  multiply(o){
+    return new Matrix4([
+      o.data[0]*this.data[0] + o.data[4]*this.data[1] + o.data[8]*this.data[2],
+      o.data[1]*this.data[0] + o.data[5]*this.data[1] + o.data[9]*this.data[2],
+      o.data[2]*this.data[0] + o.data[6]*this.data[1] + o.data[10]*this.data[2],
+      o.data[3]*this.data[0] + o.data[7]*this.data[1] + o.data[11]*this.data[2] + this.data[3],
+      o.data[0]*this.data[4] + o.data[4]*this.data[5] + o.data[8]*this.data[6],
+      o.data[1]*this.data[4] + o.data[5]*this.data[5] + o.data[9]*this.data[6],
+      o.data[2]*this.data[4] + o.data[6]*this.data[5] + o.data[10]*this.data[6],
+      o.data[3]*this.data[4] + o.data[7]*this.data[5] + o.data[11]*this.data[6] + this.data[7],
+      o.data[0]*this.data[8] + o.data[4]*this.data[9] + o.data[8]*this.data[10],
+      o.data[1]*this.data[8] + o.data[5]*this.data[9] + o.data[9]*this.data[10],
+      o.data[2]*this.data[8] + o.data[6]*this.data[9] + o.data[10]this.*data[10],
+      o.data[3]*this.data[8] + o.data[7]*this.data[9] + o.data[11]*this.data[10] + this.data[11]
+    ]);
+  }
+  
+}</code>
+
+<p>Matrix inverse (TODO p.217)
+<p>Matrix transpose (TODO p.221)
+<p>Converting a quaternion to a matrix (TODO p.222)
+<p>Transform vectors (TODO p.224)
+<p>Change the basis of a matrix (TODO p.228)
+<p>Quaternion class (TODO p.230-234)
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p><br><br><b><a href="../10/index.html">Next</a>
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px; }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

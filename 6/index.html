@@ -1,0 +1,118 @@
+﻿<title>Game Physics JS: Springs</title>
+<h1>Game Physics JS: Springs</h1>
+
+<h2>Hook's law</h2>
+<p>The force applied by a spring to both of its ends, when it is extended or compressed, is:
+<p><code class=f>f = -k(|d| - l<sub>0</sub>)d̂</code>
+<p>With a spring stiffness <b>k</b>, rest length <b>l<sub>0</sub></b>, length <b>|d|</b> and direction <b>d̂</b>.
+<p>The force's direction points to the end of the spring that interests us (the force at the other end will be equal to <b>-f</b>).
+<p>A spring's limit of elasticity (min / max length) can be enforced in code, but it's rarely useful.
+
+<h2>Spring-like force generators</h2>
+<p><b>1) Basic spring</b>
+<p>Applies a spring force to a particle.
+<p>If there's a movable particle at both ends of the spring, call <b>updateForce</b> for both.
+<p>If the spring is used to make the camera follow a character, use it only for the camera (the character must not be affected by the camera's spring).
+<p><code>class ParticleSpring {
+  other;
+  springConstant;
+  restLength;
+  
+  constructor(other, springConstant, restLength){
+    this.other = other;
+    this.springConstant = springConstant;
+    this.restLength = restLength;
+  }
+  
+  updateForce(particle){
+    
+    // Calculate the vector of the spring
+    var force = new Vector3();
+    force.sub(this.other.position);
+    
+    // Calculate the magnitude of the force
+    var magnitude = force.magnitude();
+    magnitude = Math.abs(magnitude - this.restLength) * this.springConstant;
+    
+    // Calculate the final force and apply it
+    force.normalize();
+    force.scale(-magnitude);
+    particle.addForce(force);
+  }
+}</code>
+
+<p><b>2) Anchored spring</b>
+<p>Same thing but instead of an "other" particle, there's an "anchor" point not affected by the spring.
+
+<p><b>3) Elastic bungee</b>
+<p>Contrary to a complete spring, the bungee only has a pulling force when extended.
+<p><code>// Check if the bungee is compressed.
+var magnitude = force.magnitude();
+if(magnitude &lt;= this.restLength) return;</code>
+
+<p><b>4) Buoyancy</b>
+<p>Springs can be used to approach buoyancy forces.
+<p>The buoyancy force is 0 when the object is out of water, and fixed when it is fully submerged.
+<p><code class=f>f = dvρ</code>
+<p>Where <b>d</b> is the object's submersion level (0 &lt;= d &lt;= 1), <b>v</b> is the object's volume and <b>ρ</b> the liquid's density.
+<p>If the object is partially submerged:
+<p><code class=f>d = (object_height - liquid_plane - submersion_depth) / 2 * (submersion_depth)</code>
+
+<p><code>class ParticleBuoyancy {
+  maxDepth;
+  volume;
+  waterHeight;
+  liquidDensity;
+  
+  constructor(maxDepth, volume, waterHeight, liquidDensity = 1000){
+    this.maxDepth = maxDepth;
+    this.volume = volume;
+    this.waterHeight = waterHeight;
+    this.liquidDensity = liquidDensity;
+  }
+  
+  updateForce(particle){
+    
+    // Calculate the submersion depth
+    var depth = particle.position.y;
+    
+    // Check if we’re out of the water
+    if (depth >= this.waterHeight + this.maxDepth) return;
+    
+    var force = Vector3(0,0,0);
+    
+    // Check if we’re at maximum depth
+    if (depth &lt;= waterHeight - maxDepth){
+      force.y = this.liquidDensity * this.volume;
+      particle.addForce(force);
+      return;
+    }
+    
+    // Otherwise we are partly submerged
+    force.y = this.liquidDensity * this.volume *
+    (this.depth - this.maxDepth - thi.waterHeight) / 2 * this.maxDepth;
+    
+    particle.addForce(force);
+  }
+}</code>
+
+<p>Demo
+<p><iframe id=demo1 src="https://xem.github.io/mini3Dphysics/old/demos/6-buoyancy/" width=650 height=500 frameborder=no></iframe>
+<p><button onclick="demo1.src=demo1.src">RESET DEMO</button>
+
+<h2>Stiff springs</h2>
+<p>Stiff springs are used in many games to resolve collisions (objects interpenetrating), but are hard to fine tune.
+
+
+<p><br><br><b><a href="../7/index.html">Next</a>
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px;  }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

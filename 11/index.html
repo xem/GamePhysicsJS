@@ -1,0 +1,56 @@
+﻿<title>Game Physics JS: Rigid body physics engine</title>
+<h1>Game Physics JS: Rigid body physics engine</h1>
+<h2>Overview</h2>
+<p>1) The rigid bodies keep track of their position, movement, mass.
+<p>2) Forces can be applied to them.
+<p><code>class World {
+
+  RigidBodies;
+  
+  constructor(RigidBodies){
+    this.RigidBodies = RigidBodies;
+  }
+  
+  startFrame(){
+    for(var b of this.RigidBodies){
+      b.clearAccumulators();
+      b.calculateDerivedData();
+    }
+  }
+  
+  integrate(duration){
+    for(var b of this.RigidBodies){
+      b.integrate(duration);
+    }
+  }
+  
+  runPhysics(duration){
+  
+    // TODO: apply forces
+    
+    this.integrate(duration);
+  }
+}</code>
+
+<h2>Using the engine</h2>
+<p>Two demos are shown:
+<p>- Flight simulator (no collisions, uses an aerodynamic tensor, see p.265).
+<p>- Sailing simulator (no collisions, uses buoyancy, see p.273).
+
+
+
+
+
+<p><br><br><b><a href="../12/index.html">Next</a>
+
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px; }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

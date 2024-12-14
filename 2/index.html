@@ -1,0 +1,182 @@
+﻿<title>Game Physics JS: Mathematics of particles</title>
+<h1>Game Physics JS: Mathematics of particles</h1>
+
+<h2>Vectors</h2>
+<p>Vectors are tuples (arrays of numbers) representing position,  speed, acceleration and direction in 3D space.
+
+<p><b>JavaScript implementation:</b>
+<p><code>class Vector3 {
+  x;
+  y;
+  z;
+  
+  constructor(x,y,z){
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+}</code>
+
+<h2>Handedness</h2>
+<p>Coordinate systems and vectors operations depend on a left of right handedness. Right will be used here, as it is favored by WebGL. 
+<p><img src=handedness.png width=400>
+
+<h2>Vectors and directions</h2>
+<p>A vector can represent a position in space, or in other terms, a displacement from the origin up to a given point <b>a</b>:
+<p><code class=f>a = [a<sub>x</sub>, a<sub>y</sub>, a<sub>z</sub>]</code>
+<p>Similarly, it can represent a displacement between two points <b>a</b> and <b>b</b>:
+<p><code class=f>d<sub>ab</sub> = [b<sub>x</sub> - a<sub>x</sub>, b<sub>y</sub> - a<sub>y</sub>, b<sub>z</sub> - a<sub>z</sub>]</code>
+<p>A vector can be split in two elements: 
+<p><code class=f>a = dâ</code>
+<p>Where <b>d</b> is a scalar (number) representing the distance (magnitude) and <b>â</b> the direction, in the form of an unit vector (a vector of magnitude 1, or normalized vector). They can be computed in the following way:
+<p><code class=f>d = |a| = sqrt(a<sub>x</sub>² + a<sub>y</sub>² + a<sub>z</sub>²)
+â = a/d = a/|a|</code>
+<h2>Multiplying a scalar and a vector</h2>
+<p>Vector scaling changes a vector's length but not its direction:
+<p><code class=f>ka = kdâ = [ka<sub>x</sub>, ka<sub>y</sub>, ka<sub>z</sub>]</code>
+<p>This can be used to scale a vector up (k > 1), down (0 &lt; k &lt; 1), flip it (k = -1) or normalize it (k = 1/|a|).
+
+<h2>Vectors addition and subtraction</h2>
+<p>Vector addition and subtraction can be done term by term:
+<p><code class=f>a + b = [a<sub>x</sub> + b<sub>x</sub>, a<sub>y</sub> + b<sub>y</sub>, a<sub>z</sub> + b<sub>z</sub>]
+a - b = [a<sub>x</sub> - b<sub>x</sub>, a<sub>y</sub> - b<sub>y</sub>, a<sub>z</sub> - b<sub>z</sub>]</code>
+
+<h2>Vectors multiplication</h2>
+<p><b>1) Component product</b> (term by term):
+<p><code class=f>a◦b = [a<sub>x</sub> b<sub>x</sub>, a<sub>y</sub> b<sub>y</sub>, a<sub>z</sub> b<sub>z</sub>]</code>
+
+<p><b>2) Scalar product</b> (or dot product), returns a scalar (number) value.
+<p><code class=f>a·b = a<sub>x</sub> b<sub>x</sub> + a<sub>y</sub> b<sub>y</sub>+ a<sub>z</sub> b<sub>z</sub></code>
+<p>The dot product is linked to the angle between two normalized vectors:
+<p><code class=f>a·b = |a||b| cos θ ⟺ θ = cos<sup>-1</sup>(a.b / |a||b|)</code>
+<br>(The division is optional if a and b are normalized)
+<br>
+<br>
+<p><b>3) Vector product</b> (or cross product) returns a vector perpendicular to two vectors, using the current handedness:
+<p><img src=cross.png>
+<p><code class=f>a×b = [a<sub>y</sub> b<sub>z</sub> - a<sub>z</sub> b<sub>y</sub>, a<sub>z</sub> b<sub>x</sub> - a<sub>x</sub> b<sub>z</sub>, a<sub>x</sub> b<sub>y</sub> - a<sub>y</sub> b<sub>x</sub></code>
+<br>The magnitude of the cross product is also linked to the angle between the two vectors:
+<p><code class=f>|a×b| = |a||b| sin θ</code>
+<br>Contrary to the other products, the cross product is not commutative:
+<p><code class=f>a×b = -b×a</code>
+
+<p><b>JavaScript implementation</b>
+
+<p><code>class Vector3 {
+
+  // ...
+  
+  <b>// invert</b>
+  invert(){
+    this.x = -this.x;
+    this.y = -this.y;
+    this.z = -this.z;
+  }
+  
+  <b>// magnitude</b>
+  magnitude(){
+    return Math.hypot(this.x, this.y, this.z);
+  }
+  
+  <b>// magnitude squared (faster for comparing two vectors)</b>
+  squareMagnitude(){
+    this.x ** 2 + this.y ** 2 + this.z ** 2;
+  }
+  
+  <b>// normalize</b>
+  normalize(){
+    var l = this.matnitude();
+    if(l > 0) this.scale(1/l);
+  }
+  
+  <b>// scale</b>
+  scale(s){
+    this.x *= s;
+    this.y *= s;
+    this.z *= s;
+  }
+  
+  <b>// add</b>
+  add(v){
+    this.x += v.x;
+    this.y += v.y;
+    this.z += v.z;
+  }
+
+  <b>// subtract</b>
+  sub(v){
+    this.x -= v.x;
+    this.y -= v.y;
+    this.z -= v.z;
+  }
+
+  <b>// add a scaled vector</b>
+  addScaled(v, s){
+    this.x += v.x * s;
+    this.y += v.y * s;
+    this.z += v.z * s;
+  }
+
+  <b>// component product</b>
+  componentProduct(v){
+    this.x *= v.x;
+    this.y *= v.y;
+    this.z *= v.z;
+  }
+
+  <b>// scalar (dot) product (operator used in the book: *)</b>
+  scalarProduct(v){
+    return this.x * v.x + this.y*v.y + this.z*v.z;
+  }
+
+  <b>// vector (cross) product (operator used in the book: %)</b>
+  vectorProduct(v){
+    return Vector3(this.y*b.z - this.z*b.y,
+                   this.z*b.x - this.x*b.z,
+                   this.x*b.y - this.y*b.x);
+  }
+  
+  <b>// Clone</b>
+  clone(){
+    return new Vector3(this.x, this.y, this.z);
+  }
+}</code>
+
+<h2>Calculus</h2>
+
+<p>The part of calculus that interests us here is how things change over time (position, force, velocity...).
+<p>The change itself is described with differential calculus, and its effect with integral calculus.
+<p><b>Differential calculus</b>
+<p>Velocity is the rate of change of a value over time:
+<p><code class=f>v = (change in position) / (time passed) = dp / dt = ̇p</code>
+<p>Acceleration is the rate of change of velocity:
+<p><code class=f>a = dv / dt = d²p / dt² = p̈</code>
+<p>Velocity and acceleration can be applied to vectors:
+<p><code class=f>̇a = [̇a<sub>x</sub>, ̇a<sub>y</sub>, ̇a<sub>z</sub>]
+ä = [ä<sub>x</sub>, ä<sub>y</sub>, ä<sub>z</sub>]</code>
+<p>(Such vectors can be added, subtracted and scaled normally. Vector products are different).
+<p>The speed <b>s</b> is the magnitude of the velocity vector:
+<p><code class=f>̇x = sd̂</code>
+<p><b>Integral calculus</b>
+<p>Integration is the opposite of differentiation. In a game's physics engine, it refers to updating position and velocity at each frame (in regard to time <b>t</b>):
+<p><code class=f>p' = p + ̇pt
+̇p' = ̇p + p̈t
+So, p' = p + ̇pt + 1/2p̈t²</code>
+<p>Here's how to update a position with code:
+<p><code>position.addScaledVector(velocity, time);
+// position.addScaledVector(acceleration, time * time * 0.5);</code>
+<p>(In reality, the effect of acceleration on the position is negligeable and the last line is generally omitted).
+
+<p><br><br><b><a href="../3/index.html">Next</a>
+
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px;  }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

@@ -1,0 +1,55 @@
+﻿<script src="../W/w.min.full.js"></script>
+<script src="../lib/vec.js"></script>
+<script src="../lib/mat.js"></script>
+<script src="../lib/rigidBody.js"></script>
+<script src="../lib/shapes.js"></script>
+<script src="../lib/contact.js"></script>
+<script src="../lib/collision.js"></script>
+<canvas id=d1 width=600 height=400></canvas>
+<p>Box moves. Plane is fixed. Collision is towards box.
+<p>Black dots: collision points. Green dots: collision normals × collision depth.
+<p>Box: radius: <input id=r1 type=range value=r1 min=0.5 max=1.5 step=0.01>
+X: <input id=x1 type=range value=0 min=-2 max=2 step=0.01>
+Y: <input id=y1 type=range value=0 min=-4 max=1 step=0.01>
+Z: <input id=z1 type=range value=-1 min=-2 max=0 step=0.01>
+<script>
+W.reset(d1);
+W.camera({z:4});
+W.light({x:.5,y:-.5,z:-.5});
+W.cube({n:"s1",x:0,y:0,z:0,size:1,s:1,b:"#00FF0088"});
+W.plane({n:"s2",x:0,y:-1,z:0,rx: -90, rz:0, size:3,s:2,b:"#00FF0088"});
+W.sphere({n:"c1",x:0,y:99,z:0,size:.1,s:.1,b:"#000000"});
+W.sphere({n:"c2",x:0,y:99,z:0,size:.1,s:.1,b:"#000000"});
+W.sphere({n:"c3",x:0,y:99,z:0,size:.1,s:.1,b:"#000000"});
+W.sphere({n:"c4",x:0,y:99,z:0,size:.1,s:.1,b:"#000000"});
+W.sphere({n:"n1",x:0,y:99,z:0,size:.1,s:.1,b:"#00FF00"});
+W.clearColor("#fed");
+onload=onchange=oninput=()=>{
+  W.move({n:"s1",size:+r1.value,x:+x1.value,y:+y1.value,z:+z1.value});
+  var s = new BoundingBox(new Vector3(+x1.value, +y1.value, +z1.value), new Vector3(.5, .5, .5), new Matrix4());
+  var s2 = new Plane(-1, (new Vector3(0,1,0)).normalize());
+  var c = CollisionDetector.boxAndHalfSpace(s, s2);
+  if(c.collision){
+    console.log(c);
+    W.move({n:"s1",b:"#FF000088"});
+    W.move({n:"s2",b:"#FF000088"});
+
+    W.move({n:"c1",x: c.contacts[0].contactPoint.x, y: c.contacts[0].contactPoint.y, z: c.contacts[0].contactPoint.z});
+    W.move({n:"c2",x: c.contacts[1].contactPoint.x, y: c.contacts[1].contactPoint.y, z: c.contacts[1].contactPoint.z});
+    W.move({n:"c3",x: c.contacts[2].contactPoint.x, y: c.contacts[2].contactPoint.y, z: c.contacts[2].contactPoint.z});
+    W.move({n:"c4",x: c.contacts[3].contactPoint.x, y: c.contacts[3].contactPoint.y, z: c.contacts[3].contactPoint.z});
+    //tmp = c.contactPoint.addScaled(c.contactNormal, c.penetration);
+    //W.move({n:"n1",x: tmp.x, y: tmp.y, z: tmp.z});
+  }
+  else{
+    W.move({n:"s1",b:"#00FF0088"});
+    W.move({n:"s2",b:"#00FF0088"});
+    W.move({n:"c1",y: 99});
+    W.move({n:"n1",y: 99});
+  }
+}
+</script>
+<style>
+body { margin: 10px }
+input { width: 100px }
+</style>

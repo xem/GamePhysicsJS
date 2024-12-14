@@ -1,0 +1,131 @@
+﻿<title>Ch.9: 3D shape intersections</title>
+<h1>Chapter 9: 3D shape intersection</h1>
+<p>→ Source code: <a href="../lib/collision.js">collision.js</a>.
+
+<p>(Skipped: collisions with AABB and planes)
+
+<h2>Sphere to sphere</h2>
+<p>Two spheres intersect if their distance is lower than the sum of their radii.
+
+<p><code>collisionSphereSphere = (s1, s2) => {
+  return dist(s1.position, s2.position) &lt; (s1.radius + s2.radius);
+}</code>
+
+<p>Demo (the shapes turn red when a collision is detected)
+
+<p><iframe src=demo1.html width=640 height=480 frameborder=no></iframe>
+
+<h2>Sphere to OBB</h2>
+
+<p>A sphere intersects with an oriented bounding box if its distance to the closest point of the OBB is smaller than its radius.
+
+<p><code>collisionSphereOBB = (sphere, obb) => {
+  var closest = closestPointOBB(obb, sphere.position);
+  var d = dist(sphere.position, closest);
+  return d &lt; sphere.radius;
+}</code>
+
+<p>Demo
+<p><iframe src=demo2.html width=640 height=530 frameborder=no></iframe>
+
+<h2>OBB to OBB</h2>
+
+<p>Checking if all points of an OBB are outside another OBB is not sufficient to determine if they collide.
+<p>We will use SAT (the Separating Axis theorem), that determines if the two OBBs have a gap between them when they get projected on 15 different axis:
+<p>- The 3 basis vectors of orientation of the first OBB
+<br>- The 3 basis vectors of orientation of the second OBB
+<br>- The 9 cross-products between the basis vectors of orientation of the first OBB and the second OBB.
+<p>If no gap is found on any of these projections, the boxes are colliding.
+
+<p><code>// Interval object
+
+interval = options => {
+  options ??= {}
+  options.min ??= 0;
+  options.max ??= 0;
+  return options;
+}
+
+// Get interval of an OBB on one axis
+getInterval = (obb, axis) => {
+  var C = obb.position;     // center
+  var E = obb.size;         // Extents
+  var o = obb.orientation;
+  var A = [                 // Axis
+    new DOMPoint(o.m11, o.m12, o.m13),
+    new DOMPoint(o.m21, o.m22, o.m23),
+    new DOMPoint(o.m31, o.m32, o.m33)
+  ];
+  
+  // Find all vertices of the OBB
+  var vertex = [];
+  for(var a of [-1, 1]){
+    for(var b of [-1, 1]){
+      for(var c of [-1, 1]){
+        vertex.push(
+          add(add(add(C, scale(A[0], a * E[0])), scale(A[1], b * E[1])), scale(A[2], c * E[2]))
+        );
+      }
+    }
+  }
+  
+  // Result
+  var result = interval();
+  result.min = result.max = dot(axis, vertex[0]);
+  var projection;
+  for(i = 0; i &lt; 8; i++){
+    projection = dot(axis, vertex[i]);
+    if(projection &lt; result.min) result.min = projection;
+    if(projection > result.max) result.max = projection;
+  }
+  return result;
+}
+
+// Check if the OBBs overlap on one axis
+overlapOnAxis = (obb1, obb2, axis) => {
+  var a = getInterval(obb1, axis);
+  var b = getInterval(obb2, axis); // typo in the book, it says obb1 here
+  return (b.min &lt;= a.max) && (a.min &lt;= b.max);
+}
+
+// Check if two OBBs collide
+collisionOBBOBB = (obb1, obb2){
+  var o1 = obb1.orientation;
+  var o2 = obb2.orientation;
+  var test = [
+    new DOMPoint(o1.m11, o1.m12, o1.m13),
+    new DOMPoint(o1.m21, o1.m22, o1.m23),
+    new DOMPoint(o1.m31, o1.m32, o1.m33),
+    new DOMPoint(o2.m11, o2.m12, o2.m13),
+    new DOMPoint(o2.m21, o2.m22, o2.m23),
+    new DOMPoint(o2.m31, o2.m32, o2.m33)
+  ];
+  
+  // Create the other axis  
+  for(var i = 0; i &lt; 3; ++i){
+    test[6 + i * 3] = cross(test[i], test[0]);
+    test[6 + i * 3 + 1] = cross(test[i], test[1]);
+    test[6 + i * 3 + 2] = cross(test[i], test[2]);
+  }
+  
+  // Test tall the axis
+  for(i = 0; i &lt; 15; ++i){
+    if(!overlapOnAxis(obb1, obb2, test[i])) return false;
+  }
+  return true;
+}</code>
+
+<p>Demo
+<p><iframe src=demo3.html width=640 height=530 frameborder=no></iframe>
+
+
+<style>
+body { font: 15px calibri }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #def; padding: 10px; margin: 10px 0; font: bold 14px/22px courier; white-space: pre; position: relative;}
+.f { background: #fde; font-family: arial; }
+code:before { content: "JS code"; color: #abc; position: absolute; top: -17px; left: 0px; font-size: 10px; }
+code.f:before { content: "Formula"; color: #cab; }
+p { padding: 0 0 0 10px }
+code b.sqrt { border-top: 1px solid; }
+</style>

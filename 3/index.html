@@ -1,0 +1,50 @@
+﻿<title>Game Physics JS: Laws of motion</title>
+<h1>Game Physics JS: Laws of motion</h1>
+
+<h2>Particles</h2>
+<p>A particle has a position, velocity and acceleration, but no orientation.
+
+<h2>Newton's first laws of motion</h2>
+<p><b>1) An object continues with a constant velocity unless a force acts upon it.</b>
+<p>The value that stays constant is actually the momentum (velocity * mass). More details later.
+<p>Because of rounding errors in computer simulations, all movements tend to accelerate.
+<p>As a result, the velocity must be corrected at each frame with a damping coefficient (ex: 0.999).
+<p>A smaller damping value can be used to reproduce real world's drag forces (ex: 0.8).
+
+<br>
+<br>
+
+<p><b>2) A force acting on an object produces acceleration that is inversely proportional to the object’s mass.</b>
+<p>All forces applied to an object alter its acceleration, proportionally to its mass.
+<p>Velocity and position are then updated by integration.
+<p><code class=f>f = ma = mp̈ ⟺ p̈ = 1/m f</code>
+<p>Instead of storing tha particle's mass, we will use inverseMass (1/m).
+<p>If the inverseMass is zero, the object will be immovable.
+
+<p><b>Gravity</b>
+<p>Gravity is a downwards force, around 10m/s² on Earth, often higher in video games (ex: 15 to 20m/s²).
+<p><code class=f><b>g</b> = [0, -g, 0];</code>
+
+<h2>Integrator</h2>
+<p>In a physics engine, the integrator updates velocity and position of every object at each frame.
+<p><b>Position update</b>
+<p>As we saw in Chapter 2, position can be approached with the velocity only:
+<p><code class=f>p' = p + ̇pt</code>
+<p><b>Velocity update</b>
+<p>The velocity can be updated using the acceleration and the damping parameter <b>d</b> (to the power of elapsed time):
+<p><code class=f>̇p' = ̇pd<sup>t</sup> + ̈pt</code>
+<p>JavaScript implementation in chapter 5.
+
+<p><br><br><b><a href="../4/index.html">Next</a>
+
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px;  }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

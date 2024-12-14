@@ -1,0 +1,179 @@
+﻿<title>Game Physics JS: Laws of motion for rigid bodies</title>
+<h1>Game Physics JS: Laws of motion for rigid bodies</h1>
+<h2>The rigid body</h2>
+<p>Contrary to particles, a rigid body has a volume and can rotate.
+<p>Let's rewrite the RigidBody class to include rotations.
+<h2>Newton-2 for rotation</h2>
+<p>We saw that a change in velocity depends on a force acting on a body and its inverse mass.
+<p>For rotation, the thange in angular velocity depends on torque <b>τ</b> and moment of inertia <b>I</b>.
+<p><code class=f>θ̈ = I<sup>-1</sup> τ</code>
+<p>Torque is a twisting force. It is linked to a force <b>f</b> applied to a point <b>p<sub>f</sub></b> (relative to the object's center of mass) by:
+<p><code class=f>τ = p<sub>f</sub> × f</code>
+<p>Every force applied to an object provokes both linear acceleration and torque.
+<p>In 3D, torque has an axis <b>d̂</b> and a magnitude <b>a</b>:
+<p><code class=f>τ = a d̂</code>
+<p>The moment of inertia is the rotational equivalent of mass, or how difficult it is to rotate an object.
+<p>However, it depends of how you spin it. There's a different inertia in each axis, so we represent it with a Matrix3 "inertia tensor".
+<p>Torque is expressed in World coordinates, but the inertia tensor is local. We can derive it at each frame (see transformInertiaTensor).
+<h2>D'alembert for rotation</h2>
+<p>The global torque is equal to the sum of all torques. We will have a dedicated accumulator.
+<p>Gravity is always applied to the center of mass, so it doesn't create any torque.
+<p>Force generators (TODO p.256)
+<h2>Rigid body itegration</h2>
+<p>Let's update position and orientation based of forces and torques (<b>d<sub>a</sub></b> is the angular damping):
+<p><code class=f>θ˙' = θ˙ (d<sub>a</sub>)<sup>t</sup> + θ¨t</code>
+<p><b>JavaScript implementation</b>
+<p><code>class RigidBody {
+  position; // Vector3
+  orientation; // Quaternion
+  velocity; // Vector3
+  inverseMass; // float
+  linearDamping; // float
+  angularDamping; // float
+  iverseInertiaTensor; // Matrix3
+  iverseInertiaTensorWorld; // Matrix3
+  rotation; // angular velocity, Vector3
+  transformMatrix; // Matrix4, derived from position and orientation once per frame
+  forceAccum; // Vector3
+  torqueAccum; // Vector3
+  isAwake; // boolean
+  
+  constructor(position, orientation, velocity, inverseMass, linearDamping, angularDamping){
+    this.position = position;
+    this.orientation = orientation;
+    this.velocity = velocity;
+    this.inverseMass = inverseMass;
+    this.linearDamping = linearDamping;
+    this.angularDamping = angularDamping;
+    this.iverseInertiaTensor = new Matrix3();
+    this.iverseInertiaTensorWorld = new Matrix3();
+    this.rotation = new Vector3();
+    this.transformMatrix = new Matrix4();
+    this.forceAccum = new Vector3();
+    this.torqueAccum = new Vector3();
+    this.isAwake = true;
+  }
+
+  setInertiaTensor(inertiaTensor){
+    this.iverseInertiaTensor = inertiaTensor.inverse();
+  }
+  
+  transformInertiaTensor(q, iitBody, rotmat){
+    var t4 = rotmat.data[0]*iitBody.data[0]+ rotmat.data[1]*iitBody.data[3]+ rotmat.data[2]*iitBody.data[6];
+    var t9 = rotmat.data[0]*iitBody.data[1]+ rotmat.data[1]*iitBody.data[4]+ rotmat.data[2]*iitBody.data[7];
+    var t14 = rotmat.data[0]*iitBody.data[2]+ rotmat.data[1]*iitBody.data[5]+ rotmat.data[2]*iitBody.data[8];
+    var t28 = rotmat.data[4]*iitBody.data[0]+ rotmat.data[5]*iitBody.data[3]+ rotmat.data[6]*iitBody.data[6];
+    var t33 = rotmat.data[4]*iitBody.data[1]+ rotmat.data[5]*iitBody.data[4]+ rotmat.data[6]*iitBody.data[7];
+    var t38 = rotmat.data[4]*iitBody.data[2]+ rotmat.data[5]*iitBody.data[5]+ rotmat.data[6]*iitBody.data[8];
+    var t52 = rotmat.data[8]*iitBody.data[0]+ rotmat.data[9]*iitBody.data[3]+ rotmat.data[10]*iitBody.data[6];
+    var t57 = rotmat.data[8]*iitBody.data[1]+ rotmat.data[9]*iitBody.data[4]+ rotmat.data[10]*iitBody.data[7];
+    var t62 = rotmat.data[8]*iitBody.data[2]+ rotmat.data[9]*iitBody.data[5]+ rotmat.data[10]*iitBody.data[8];
+    this.iverseInertiaTensorWorld.data[0] = t4*rotmat.data[0]+ t9*rotmat.data[1]+ t14*rotmat.data[2];
+    this.iverseInertiaTensorWorld.data[1] = t4*rotmat.data[4]+ t9*rotmat.data[5]+ t14*rotmat.data[6];
+    this.iverseInertiaTensorWorld.data[2] = t4*rotmat.data[8]+ t9*rotmat.data[9]+ t14*rotmat.data[10];
+    this.iverseInertiaTensorWorld.data[3] = t28*rotmat.data[0]+ t33*rotmat.data[1]+ t38*rotmat.data[2];
+    this.iverseInertiaTensorWorld.data[4] = t28*rotmat.data[4]+ t33*rotmat.data[5]+ t38*rotmat.data[6];
+    this.iverseInertiaTensorWorld.data[5] = t28*rotmat.data[8]+ t33*rotmat.data[9]+ t38*rotmat.data[10];
+    this.iverseInertiaTensorWorld.data[6] = t52*rotmat.data[0]+ t57*rotmat.data[1]+ t62*rotmat.data[2];
+    this.iverseInertiaTensorWorld.data[7] = t52*rotmat.data[4]+ t57*rotmat.data[5]+ t62*rotmat.data[6];
+    this.iverseInertiaTensorWorld.data[8] = t52*rotmat.data[8]+ t57*rotmat.data[9]+ t62*rotmat.data[10];
+  }
+  
+  calculateDerivedData(){
+    this.orientation.normalize();
+    this.calculateTransformMatrix(this.position, this.orientation);
+    this.transformInertiaTensor(this.orientation, this.inverseInertiaTensor, this.transformMatrix);
+  }
+  
+  calculateTransformMatrix(position, orientation){
+    this.transformMatrix.data[0] = 1-2*orientation.j*orientation.j - 2*orientation.k*orientation.k;
+    this.transformMatrix.data[1] = 2*orientation.i*orientation.j - 2*orientation.r*orientation.k;
+    this.transformMatrix.data[2] = 2*orientation.i*orientation.k + 2*orientation.r*orientation.j;
+    this.transformMatrix.data[3] = position.x; transformMatrix.data[4] = 2*orientation.i*orientation.j + 2*orientation.r*orientation.k; 
+    this.transformMatrix.data[5] = 1-2*orientation.i*orientation.i - 2*orientation.k*orientation.k;
+    this.transformMatrix.data[6] = 2*orientation.j*orientation.k - 2*orientation.r*orientation.i;
+    this.transformMatrix.data[7] = position.y;
+    this.transformMatrix.data[8] = 2*orientation.i*orientation.k - 2*orientation.r*orientation.j;
+    this.transformMatrix.data[9] = 2*orientation.j*orientation.k + 2*orientation.r*orientation.i;
+    this.transformMatrix.data[10] = 1-2*orientation.i*orientation.i - 2*orientation.j*orientation.j;
+    this.transformMatrix.data[11] = position.z;
+  }
+  
+  addForce(force){
+    this.forceAccum.add(force); // Vector3
+    this.isAwake = true;
+  }
+  
+  addForceAtBodyPoint(force, point){
+    var pt = getPointInWorldSpace(point);
+    this.addForceAtPoint(force; pt);
+    this.isAwake = true;
+  }
+  
+  addForceAtBodyPoint(force, point){
+    var pt = point.clone();
+    pt.sub(position);
+    this.forceAccum.add(force);
+    this.torqueAccum.add(vectorProduct(pt, force));
+    this.isAwake = true;
+  }
+  
+  clearAccumulators(){
+    this.forceAccum = new Vector3();
+    this.torqueAccum = new Vector3();
+  }
+  
+  integrate(duration){
+  
+    // Calculate linear acceleration from force inputs
+    var lastFrameAcceleration = acceleration.clone();
+    lastFrameAcceleration.addScaledVector(this.forceAccum, this.inverseMass);
+    
+    // Calculate angular acceleration from torque inputs
+    var angularAcceleration = this.inverseInertiaTensorWorld.transform(this.torqueAccum);
+    
+    // Adjust velocities
+    
+    // Update linear velocity from both acceleration and impulse
+    this.velocity.addScaledVector(lastFrameAcceleration, duration);
+    
+    // Update angular velocity from both acceleration and impulse
+    this.rotation.addScaledVector(angularAcceleration, duration);
+    
+    // Impose drag
+    this.velocity.scale(this.linearDamping ** duration);
+    this.rotation.scale(angularDamping ** duration);
+    
+    // Adjust positions
+    
+    // Update linear position
+    this.position.addScaledVector(this.velocity, duration);
+    
+    // Update angular position
+    this.orientation.addScaledVector(this.rotation, duration);
+    
+    // Normalize the orientation, and update the matrices with the new position and orientation
+    this.calculateDerivedData();
+    
+    // Clear accumulators
+    this.clearAccumulators();
+  }
+}</code>
+
+
+
+
+<p><br><br><b><a href="../11/index.html">Next</a>
+
+
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px; }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

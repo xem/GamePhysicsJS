@@ -1,0 +1,149 @@
+﻿<title>Ch.7: 3D primitive shapes</title>
+<h1>Chapter 7: 3D primitive shapes</h1>
+<p>→ Source code: <a href="../lib/shapes.js">shapes.js</a>.
+
+<br>
+
+<p>(Skipped: Point, line segment, ray, axis-aligned bounding box (AABB) and triangle)
+
+<!--
+<h2>Point</h2>
+<p>A 3D point has 3 components (x, y, z).
+<p>To be fully transformable, it may include the fourth component w = 1 (DOMpoint adds it by default).
+
+<p><code>p = new DOMPoint(x, y, z);</code>
+
+<p>The distance between two points a and b can be measured with:
+<p><code>d = mag(sub(b, a));</code>
+
+<h2>Line segment</h2>
+<p>A line segment is defined by 2 points, start and end.
+<p><code>// Constructor
+line = options => {
+  options.start ??= new DOMPoint();
+  options.end ??= new DOMPoint();
+  return options;
+}
+
+// Example:
+l = line({start: new DOMPoint(1,2,3), end: new DOMPoint(4,5,6)});</code>
+
+<h2>Ray</h2>
+<p>A ray is defined by an rigin point and a normalized direction.
+<p><code>// Constructor
+ray = options => {
+  options.origin ??= new DOMPoint();
+  options.direction ??= new DOMPoint();
+  options.direction.w = 0;
+  options.direction = norm(options.direction);
+  return options;
+}
+
+// Create a ray from two points
+ray.fromPoints = (from, to) => {
+  return ray(from, norm(sub(to - ray));
+}
+
+// Example:
+r1 = ray({origin: new DOMPoint(1,2,3), direction: new DOMPoint(4,5,6)});</code>
+r2 = ray.fromPoints(new DOMPoint(1,2,3), new DOMPoint(4,5,6));</code>
+-->
+
+<h2>Sphere</h2>
+<p>A sphere is defined by a position (its center) and a radius.
+<p><code>// Constructor
+sphere = options => {
+  options.position ??= new DOMPoint();
+  options.radius ??= 1;
+  return options;
+}
+
+// Example:
+s = sphere({position: new DOMPoint(1,2,3), radius: 4});</code>
+
+<p>Demo
+<p><iframe src=demo1.html width=640 height=480 frameborder=no></iframe>
+
+<!--
+<h2>Axis-aligned bounding box</h2>
+<p>An AABB is defined by a position (its center) and size (half extents in the 3 directions x, y, z).
+<p><code>// Constructor
+aabb = options => {
+  options.position ??= new DOMPoint();
+  options.size ??= new DOMPoint();
+  return options;
+}
+
+// Example:
+a = aabb({position: new DOMPoint(1,2,3), size: new DOMPoint(4,5,6)});</code>
+-->
+
+<h2>Oriented bounding box</h2>
+<p>An OBB is defined by a position, a size in each direction (array of 3 numbers) and a matrix transformation.
+<p>Its non-oriented equivalent is the AABB (axis-aligned bounding box).
+<p><code>// Constructor
+obb = options => {
+  options.position ??= new DOMPoint();
+  options.size ??= [1, 1, 1];
+  options.orientation ??= new DOMMatrix();
+  return options;
+}
+
+// Example:
+a = aabb({
+  position: new DOMPoint(1,2,3),
+  size: new DOMPoint(4,5,6),
+  orientation: new DOMMatrix().rotate(7,8,9).translate(10,11,12)
+});</code>
+
+<p>Demo
+<p><iframe src=demo2.html width=640 height=530 frameborder=no></iframe>
+
+<h2>Plane</h2>
+<p>A plane is defined by a normal (unit length) and a distance from the origin.
+<p><code>// Constructor
+plane = options => {
+  options.normal ??= new DOMPoint();
+  options.distance ??= 0;
+  options.normal = norm(options.normal);
+  return options;
+}
+
+// Example:
+p = plane({normal: new DOMPoint(1,2,3), distance: 4});</code>
+
+<p>To check if a point X is on the plane:
+
+<p><code>plane.isPointOnPlane = (x, p) => dot(x, p.normal) - p.distance == 0;</code>
+
+<p>Demo
+<p><iframe src=demo3.html width=640 height=500 frameborder=no></iframe>
+<!--
+<h2>Triangle</h2>
+<p>A triangle is defined by 3 points a, b, c. These points are coplanar (they form a plan).
+<p><code>// Constructor
+triangle = options => {
+  options.a ??= new DOMPoint();
+  options.b ??= new DOMPoint();
+  options.c ??= new DOMPoint();
+  return options;
+}
+
+// Example:
+p = triangle({
+  a: new DOMPoint(1,2,3),
+  b: new DOMPoint(2,1,3),
+  c: new DOMPoint(3,2,1)
+});</code>
+-->
+
+<style>
+body { font: 15px calibri }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #def; padding: 10px; margin: 10px 0; font: bold 14px/22px courier; white-space: pre; position: relative;}
+.f { background: #fde; font-family: arial; }
+code:before { content: "JS code"; color: #abc; position: absolute; top: -17px; left: 0px; font-size: 10px; }
+code.f:before { content: "Formula"; color: #cab; }
+p { padding: 0 0 0 10px }
+code b.sqrt { border-top: 1px solid; }
+</style>

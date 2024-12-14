@@ -1,0 +1,48 @@
+﻿<script src="../W/w.min.full.js"></script>
+<script src="../lib/vec.js"></script>
+<script src="../lib/mat.js"></script>
+<script src="../lib/rigidBody.js"></script>
+<script src="../lib/shapes.js"></script>
+<script src="../lib/contact.js"></script>
+<script src="../lib/collision.js"></script>
+<canvas id=d1 width=600 height=400></canvas>
+<p>Sphere 1 is fixed. Sphere 2 moves. Collision is towards sphere 1.
+<p>Black dot: collision point. Green dot: collision normal × collision depth.
+<p>Sphere 2: radius: <input id=r1 type=range value=r1 min=0.5 max=1.5 step=0.01>
+X: <input id=x1 type=range value=1 min=-2 max=2 step=0.01>
+Y: <input id=y1 type=range value=0 min=-1 max=1 step=0.01>
+Z: <input id=z1 type=range value=0 min=-1 max=1 step=0.01>
+<script>
+W.reset(d1);
+W.camera({z:3});
+W.light({x:.5,y:-.5,z:-.5});
+W.sphere({n:"s1",x:-.5,y:0,z:0,size:1,s:1,b:"#00FF0088"});
+W.sphere({n:"s2",x:2,y:0,z:0,size:1,s:1,b:"#00FF0088"});
+W.sphere({n:"c1",x:0,y:99,z:0,size:.1,s:.1,b:"#000000"});
+W.sphere({n:"n1",x:0,y:99,z:0,size:.1,s:.1,b:"#00FF00"});
+W.clearColor("#fed");
+onload=onchange=oninput=()=>{
+  W.move({n:"s2",size:+r1.value,x:+x1.value,y:+y1.value,z:+z1.value});
+  var s = new BoundingSphere(new Vector3(+x1.value, +y1.value, +z1.value), +r1.value/2);
+  var s2 = new BoundingSphere(new Vector3(-.5, 0, 0), 1/2);
+  var c = CollisionDetector.sphereAndSphere(s, s2);
+  if(c.collision){
+    W.move({n:"s1",b:"#FF000088"});
+    W.move({n:"s2",b:"#FF000088"});
+
+    W.move({n:"c1",x: c.contacts[0].contactPoint.x, y: c.contacts[0].contactPoint.y, z: c.contacts[0].contactPoint.z});
+    tmp = c.contacts[0].contactPoint.addScaled(c.contacts[0].contactNormal, c.contacts[0].penetration);
+    W.move({n:"n1",x: tmp.x, y: tmp.y, z: tmp.z});
+  }
+  else{
+    W.move({n:"s1",b:"#00FF0088"});
+    W.move({n:"s2",b:"#00FF0088"});
+    W.move({n:"c1",y: 99});
+    W.move({n:"n1",y: 99});
+  }
+}
+</script>
+<style>
+body { margin: 10px }
+input { width: 100px }
+</style>

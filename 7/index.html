@@ -1,0 +1,184 @@
+﻿<title>Game Physics JS: Hard constraints</title>
+<h1>Game Physics JS: Hard constraints</h1>
+
+<h2>Simple collision resolution</h2>
+<p>Collisions refer to situations where two objects are touching, with or without closing velocity.
+<p>The closing velocity <b>v<sub>c</sub></b> is the total speed at which two object move together. The separating velocity <b>v<sub>s</sub></b> is the opposite:
+<p><code class=f>v<sub>s</sub> = - v<sub>c</sub> = (̇p<sub>a</sub> - ̇p<sub>b</sub>)·(normalize(p<sub>a</sub> - p<sub>b</sub>))</code>
+<p>The coefficient of restitution <b>c</b> controls the speed at which two objects separate after a collision:
+<p><code class=f>v'<sub>s</sub> = -cv<sub>s</sub></code>
+<p>The contact normal <b>n̂</b> between two colliding particles <b>a</b> and <b>b</b>, seen from object <b>a</b>'s perspective, is:
+<p><code class=f>n̂ = normalize(p<sub>a</sub> - p<sub>b</sub>)</code>
+<p>In other terms:
+<p><code class=f>v<sub>s</sub> = (̇p<sub>a</sub> - ̇p<sub>b</sub>)·n̂</code>
+<p>The collision resolution is not a force added to the acceleration but an impulse <b>g</b> (an instant change in velocity).
+<p><code class=f>g = ṁp</code>
+<p>Impulses aren't accumulated like forces, but applied one at a time, to the object's position, as soon as they occur.
+<h2>Collision processing</h2>
+<p><b>JavaScript implementation</b>
+<p><code>class ParticleContact {
+  particles;
+  restitution;
+  contactNormal;
+  penetration;
+  
+  constructor(particles, restitution, contactNormal, penetration){
+    this.particles = particles;
+    this.restitution = restitution;
+    this.contactNormal = contactNormal;
+    this.penetration = penetration;
+  }
+  
+  resolve(duration){
+    this.resolveVelocity(duration);
+    this.resolveInterpenetration(duration);
+  }
+  
+  calculateSeparatingVelocity(){
+    var relativeVelocity = this.particles[0].velocity.clone();
+    if(this.particles[1]) relativeVelocity.sub(particle[1].velocity);
+    return dot(relativeVelocity, this.contactNormal); // scalar value
+  }
+  
+  resolveVelocity(duration){
+    
+    // Find the velocity in the direction of the contact
+    var separatingVelocity = this.calculateSeparatingVelocity();
+    
+    // Check if it needs to be resolved
+    if(separatingVelocity > 0){
+    
+      // If the contact is separating or stationary, no impulse is required
+      return;
+    }
+    
+    // Calculate the new separating velocity
+    var newSepVelocity = -separatingVelocity * this.restitution;
+    
+    // TODO: handle resting contact (see below)
+    
+    // Compute velocity difference
+    var deltaVelocity = newSepVelocity - separatingVelocity;
+    
+    // Compute total inverse mass
+    var totalInverseMass = this.particles[0].inverseMass;
+    if(this.particles[1]) totalInverseMass += this.particles[1].inverseMass;
+    
+    // If all particles have infinite mass, then impulses have no effect
+    if (totalInverseMass &lt;= 0) return;
+    
+    // Calculate the impulse to apply
+    var impulse = deltaVelocity / totalInverseMass;
+    
+    // Find the amount of impulse per unit of inverse mass
+    var impulsePerIMass = this.contactNormal.scale(impulse);
+    
+    // Apply impulses: in the direction of the contact, proportional to the inverse mass
+    this.particles[0].velocity.addScaledVector(impulsePerIMass, this.particles[0].inverseMass);
+    
+    if(this.particles[1]){
+    
+      // Particle 1 goes in the opposite direction
+      this.particles[1].velocity.addScaledVector(impulsePerIMass, -this.particles[1].inverseMass);
+    }
+  }
+}</code>
+<p>Collision detection will be detailed later.
+<p>Resolving collisions consists in moving interpenetrating objects apart, proportionally to their inverse mass, to separate them.
+<p><code class=f>Δp<sub>a</sub> = (m<sub>b</sub> / (m<sub>a</sub> + m<sub>b</sub>))dn
+Δp<sub>b</sub> = -(m<sub>a</sub> / (m<sub>a</sub> + m<sub>b</sub>))dn</code>
+<p>Where <b>Δp</b> is the change of position, <b>m</b> the mass, <b>n</b> the contact normal in object a's perspective and <b>d</b> the interpenetration depth.
+<p><code>class ParticleContact{
+
+  // ...
+  
+  resolveInterpenetration(duration){
+  
+    // If we don’t have any penetration, skip this step
+    if(this.penetration &lt;= 0) return;
+    
+    // The movement of each object is based on their inverse mass, so total that
+    var totalInverseMass = this.particles[0].inverseMass;
+    if(this.particles[1]){
+      totalInverseMass += this.particles[1].inverseMass;
+    }
+    
+    // If all particles have infinite mass, then we do nothing
+    if(totalInverseMass &lt;= 0) return;
+    
+    // Find the amount of penetration resolution per unit of inverse mass
+    var movePerIMass = scale(this.contactNormal, (this.penetration / totalInverseMass));
+    
+    // Calculate the movement amounts
+    var particleMovement = [];
+    particleMovement[0] = movePerIMass * this.particles[0].inverseMass;
+
+    if(particle[1]){
+      particleMovement[1] = movePerIMass * -this.particles[1].inverseMass;
+    }
+    else{
+      particleMovement[1] = new Vector3(0,0,0);
+    }
+    
+    // Apply the penetration resolution
+    this.particles[0].position.add(particleMovement[0]);
+    if(this.particles[1]){
+      this.particles[1].position.add(particleMovement[1]);
+    }
+  }
+}</code>
+<p>Resting contacts (ex: a particle resting on a plane) can cause objects to vibrate due to rounding errors accumulating at each frame.
+<p>To solve that, we can cancel the restitution as soon as the velocity buildup is equal to the acceleration.
+<p><code>resolveVelocity(duration){
+
+  // ...
+  
+  // Calculate the new separating velocity
+  // ...
+
+  // Check the velocity buildup due to acceleration only
+  var accCausedVelocity = this.particles[0].acceleration.clone();
+  if(this.particles[1]){
+    accCausedVelocity -= this.particles[1].acceleration;
+  }
+  var accCausedSepVelocity = accCausedVelocity.addScaledVector(this.contactNormal, duration);
+  
+  // If closing velocity is due to acceleration buildup, remove it from separating velocity
+  if(accCausedSepVelocity &lt; 0){
+    newSepVelocity += restitution * accCausedSepVelocity;
+  
+    // Make sure we haven’t removed more than was there to remove
+    if(newSepVelocity &lt; 0){
+      newSepVelocity = 0;
+    }
+  }
+  
+  // ...
+  
+}</code>
+<!--p>The contact resolver algorithm receives a list of contacts and:
+<br>- its collision resolution function applies impulses to bounce the objects apart
+<br>- its interpenetration resolution function moves the objects apart
+<br>- its resting contact code checks for resting collisions and adjusts velocity accordingly.-->
+<p>Resolution order: solve the most severe contacts first (the ones with the biggest closing velocity).
+<p><code>TODO (p 164)</code>
+
+<h2>Collision-like things</h2>
+<p><b>1) Cables</b> can force two objects to be no more than a specific distance apart.
+<p>They're similar to regular collisions but with inverse normals, to pull the separating objects together. 
+<p><code>TODO (p 168)</code>
+<p><b>2) Rods</b> enforce a fixed distance between two objects.
+<p><code>TODO (p 171)</code>
+
+<p><br><br><b><a href="../8/index.html">Next</a>
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px;  }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+</style>

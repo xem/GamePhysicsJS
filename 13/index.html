@@ -1,0 +1,256 @@
+﻿<title>Game Physics JS: Generating contacts</title>
+<h1>Game Physics JS: Generating contacts</h1>
+<h2>Collision geometry</h2>
+<p>Skipped: how to approximate a shape with an assembly of primitives (p. 323-325).
+
+<h2>Contact generation</h2>
+<p>Collision detection can be done by the GJK algorithm. However, it doesn't return all the contact information we need.
+<p>The SAT algorithm returns only one contact point per collsion, which is sometimes not enough.
+<p>These algorithms can be extended with a technique called contact coherence, which is also not perfect.
+<p>Two 3D objects can be in contact in 6 different (and non-exclusive) ways.
+<p><img src=ways.png>
+<p>Contacts should be detected with the following priority:
+<p>1. Vertex–face and edge–edge (nonparallel edges)
+<p>2. Edge–face and face–face
+<p>3. Vertex–edge, vertex–vertex, and edge–edge (parallel edges)
+<p>Contacts of the 3rd group are generally ignored because at the next frame, they will become a contact of higher priority.
+<p><img src=miss.png>
+
+<p>The contact data includes:
+<p>1) A collision point (if there are many, we can pick one arbitrarily without affecting the physics too much).
+<p>2) A collision normal.
+<p>3) The penetration depth.
+<p>4) The collision restitution.
+<p>5) The friction.
+<p><code>class Contact {
+  contactPoint;
+  contactNormal;
+  penetration;
+  
+  constructor(){
+    // ...
+  }
+}</code>
+
+<p>In vertex-face contacts, the normal will only depend on the face and the vertex can simply be chosen as the contact point.
+<p>In edge-edge contacts, the normal is at right angles to the tangent of both edges. The contact point is the closest point from an edge on the other edge.
+<p>Edge-face contacts are only used with curved surfaces, and are similar to vertex-face.
+<p>Face-face contacts occur between two curved surfaces or one curved and one flat. The normal is one of the face's normals (chosen consistently to avod misalignments). The contact point can be the pont of greatest penetration.
+
+<h2>Simple collsion algorithms</h2>
+<p>Setup
+<p><code>class CollisionData {
+  contacts;
+  contactsLeft;
+  
+  constructor(){
+    // ...
+  }
+}
+
+class Primitive {
+  body;
+  offset;
+  
+  constructor(){
+    // ...
+  }
+}
+
+class Sphere extends Primitive {
+  position;
+  radius;
+  
+  constructor(){
+    // super(...);
+  }
+}
+
+class Plane extends Primitive {
+  normal;
+  offset;
+  
+  constructor(){
+    // super(...);
+  }
+}</code>
+
+<p><b>1) Sphere-sphere collision</b>:
+
+<p><img src=sphere.png>
+
+<p>two spheres collide if the distance between their centers is less than the sum of their radii.
+<p>It's a face-face contact, and there is just one contact point.
+<p><code>CollisionDetector {
+
+  sphereAndSphere(one, two, data){
+  
+    // Make sure we have contacts
+    if(data.contactsLeft &lt;= 0) return 0;
+    
+    // Cache the sphere positions
+    var positionOne = one.position.clone();
+    var positionTwo = two.position.clone();
+    
+    // Find the vector between the objects
+    var midline = positionOne.clone().sub(positionTwo);
+    var size = midline.magnitude();
+    
+    // See if it is large enough
+    if(size &lt;= 0 || size >= one.radius + two.radius){
+      return 0;
+    }
+    
+    // Create the normal
+    var normal = midline.scale(1/size);
+    var contact = data.contacts;
+    contact.contactNormal = normal;
+    contact.contactPoint = positionOne.addScaled(midline, 0.5);
+    contact.penetration = (one.radius + two.radius - size);
+    contact.setBodyData(one.body, two.body, data.friction, data.restitution);
+    data.addContacts(1);
+    return 1;
+  }
+}</code>
+
+<p><b>DEMO</b>
+<p><iframe src=demo1.html width=650 height=550 frameborder=no></iframe>
+
+<p><b>2) Sphere-plane collision</b>
+<p>It's actually more convenient to consider a collision with a half-space instead of a plane (with no depth). 
+<p>In all cases, there's one face-face contact point.
+<p>The plane is represented by a vertical offset (l) and a normal vector (n).
+<p>The distance between a point (p) and a plane is:
+<p><code class=f>d = p · n − l</code>
+
+<p><code>sphereAndHalfSpace(sphere, plane){
+
+  // Make sure we have contacts
+  if (data.contactsLeft &lt;= 0) return 0;
+  
+  // Cache the sphere position
+  var position = sphere.position.clone();
+  
+  // Find the distance from the plane
+  var ballDistance = dot(plane.normal, position) -
+  sphere.radius - plane.offset;
+  
+  // Exit if not touching
+  if (ballDistance >= 0) return 0;
+  
+  // Create the contact
+  var contact = data.contacts;
+  contact.contactNormal = plane.direction;
+  contact.penetration = -ballDistance;
+  contact.contactPoint = position.addScaledVector(plane.direction, -(ballDistance + sphere.radius));
+  contact.setBodyData(sphere.body, NULL,data.friction, data.restitution);
+  data.addContacts(1);
+  return 1;
+}</code>
+
+<p><b>DEMO</b>
+<p><iframe src=demo2.html width=650 height=550 frameborder=no></iframe>
+
+
+<p><b>3) Box-plane collision</b>
+<p><img src=boxplane.png>
+<p>Up to 4 point-face contact points.
+<p>The approach here is to check each vertex of the box against the half-space.
+<p>However, it will be simpler to implement it later, with SAT.
+
+<p><b>4) Box-sphere collision</b>
+<p>One contact point (vertex-face, edge-face or face-face).
+<p>We need to find the point of the box that is the closest to the center of the sphere.
+<p>If the distance to the center is smaller than the sphere's radius, there's a collision.
+<p>The closest point and its distance become the contact point and penetration depth.
+<p>The collision normal points to the center of the sphere.
+
+<p><code>boxAndSphere(box, sphere){
+  // Transform the centre of the sphere into box coordinates
+  var centre = sphere.position.clone();
+  var relCentre = box.transform.transformInverse(centre);
+
+  // Early out check to see if we can exclude the contact
+  if(
+    Math.abs(relCentre.x) - sphere.radius > box.halfSize.x ||
+    Math.abs(relCentre.y) - sphere.radius > box.halfSize.y ||
+    Math.abs(relCentre.z) - sphere.radius > box.halfSize.z
+  ){
+    return 0;
+  }
+
+  var closestPt = new Vector3(0,0,0);
+  var dist;
+
+  // Clamp each coordinate to the box
+  dist = relCentre.x;
+  if(dist > box.halfSize.x) dist = box.halfSize.x;
+  if(dist &lt; -box.halfSize.x) dist = -box.halfSize.x;
+  closestPt.x = dist;
+
+  dist = relCentre.y;
+  if(dist > box.halfSize.y) dist = box.halfSize.y;
+  if(dist &lt; -box.halfSize.y) dist = -box.halfSize.y;
+  closestPt.y = dist;
+
+  dist = relCentre.z;
+  if(dist > box.halfSize.z) dist = box.halfSize.z;
+  if(dist &lt; -box.halfSize.z) dist = -box.halfSize.z;
+  closestPt.z = dist;
+
+  // Check we're in contact
+  dist = closestPt.sub(relCentre).squareMagnitude();
+  if(dist > sphere.radius ** 2) return 0;
+
+  // Compile the contact
+  var closestPtWorld = box.transform.transform(closestPt);
+
+  data.contacts[0].contactNormal = (closestPtWorld - centre);
+  data.contacts[0].contactNormal.normalise();
+  data.contacts[0].contactPoint = closestPtWorld;
+  data.contacts[0].penetration = sphere.radius - real_sqrt(dist);
+  return data;
+}</code>
+
+<p>DEMO todo
+
+<h2>SAT: Separating Axis Test</h2>
+<p>The idea is to project two shapes along a set of important axis, and see if they are separated or overlapping.
+<p>If no separation is found, the objects collide.
+<p>For two boxes, there are 15 axis to check.
+
+<p><code>penetrationOnAxis(
+const CollisionBox &one,
+const CollisionBox &two,
+const Vector3 &axis,
+const Vector3 &toCenter // vector from the center of the first box to the center of the second
+)
+{
+  real oneProject = transformToAxis(one, axis);
+  real twoProject = transformToAxis(two, axis);
+  real distance = real_abs(toCenter * axis);
+  // Return the overlap (i.e., positive indicates
+  // overlap, negative indicates separation).
+  return oneProject + twoProject - distance;
+}</code>
+
+<h2>Coherence</h2>
+<p>As these approaches only return a single contact point, one solution could be to fill a contact points array over several frames.
+<p>TODO
+
+
+
+<p><br><br><b><a href="../14/index.html">Next</a>
+
+
+<style>
+body { font: 15px calibri; padding: 10px; width: 800px; }
+h2 { margin: 30px 0 0 0; }
+code { display: inline-block; background: #fed; padding: 10px; margin: 10px 0 20px; font: 13px/20px courier; white-space: pre; position: relative; letter-spacing: 0; box-shadow: 0 0 5px #888; border-radius: 5px; }
+code.f { background: #ffd; font: 14px / 18px monospace; }
+code::before { xcontent: "JS code"; color: #987; position: absolute; top: -20px; left: 0px; font-weight: bold; }
+code.f::before { xcontent: "Equation"; }
+p { padding: 0 0 0 10px }
+code b { color: #555; font-weight: 600; }
+iframe { border: 2px solid #888; }
+</style>
