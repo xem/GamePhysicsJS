@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>3D Physics — Collisions complètes & spawn aléatoire</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  html,body{margin:0;overflow:hidden;background:#eef3fa;}
+  #ui{position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.4);color:white;
+      font-family:sans-serif;padding:8px;border-radius:6px;}
+  button{margin-right:6px;}
+  canvas{display:block;width:100vw;height:100vh;}
+</style>
+</head>
+<body>
+<div id="ui">
+  <button id="addSphere">+ Sphere</button>
+  <button id="addBox">+ Box</button>
+  <button id="reset">Reset</button>
+</div>
+<canvas id="glcanvas"></canvas>
+
+<script>
+/* =============== VECTOR CLASS =============== */
+class V3{
+  constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;}
+  add(b){return new V3(this.x+b.x,this.y+b.y,this.z+b.z);}
+  sub(b){return new V3(this.x-b.x,this.y-b.y,this.z-b.z);}
+  mul(s){return new V3(this.x*s,this.y*s,this.z*s);}
+  dot(b){return this.x*b.x+this.y*b.y+this.z*b.z;}
+  cross(b){return new V3(this.y*b.z-this.z*b.y,this.z*b.x-this.x*b.z,this.x*b.y-this.y*b.x);}
+  mag(){return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);}
+  norm(){const m=this.mag();return m?this.mul(1/m):new V3();}
+}
+
+/* =============== BODY CLASS =============== */
+class Body{
+  constructor(o){
+    this.type=o.type||'sphere';
+    this.pos=o.pos||new V3();
+    this.vel=o.vel||new V3();
+    this.mass=o.mass??1;
+    this.invMass=this.mass>0?1/this.mass:0;
+    this.restitution=o.restitution??0.5;
+    this.radius=o.radius||0.5;
+    this.halfSize=o.halfSize||new V3(1,1,1);
+    this.color=o.color||randColor();
+  }
+}
+function randColor(){
+  const h=Math.random(),s=0.6,l=0.65;
+  const q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;
+  const hue2rgb=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;
+    if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+  return [hue2rgb(p,q,h+1/3),hue2rgb(p,q,h),hue2rgb(p,q,h-1/3)];
+}
+
+/* =============== COLLISION HELPERS =============== */
+function sphereSphere(A,B){
+  const d=B.pos.sub(A.pos);
+  const dist=d.mag(),r=A.radius+B.radius;
+  if(dist<r){
+    const n=d.norm();
+    return {A,B,normal:n,penetration:r-dist};
+  }
+  return null;
+}
+function sphereBox(sphere,box){
+  const min=box.pos.sub(box.halfSize),max=box.pos.add(box.halfSize);
+  const c=sphere.pos;
+  const closest=new V3(
+    Math.max(min.x,Math.min(max.x,c.x)),
+    Math.max(min.y,Math.min(max.y,c.y)),
+    Math.max(min.z,Math.min(max.z,c.z))
+  );
+  const diff=c.sub(closest),dist2=diff.dot(diff),r=sphere.radius;
+  if(dist2<r*r){
+    const dist=Math.sqrt(dist2)||0;
+    const normal=dist>0?diff.mul(1/dist):new V3(0,1,0);
+    return {A:sphere,B:box,normal,penetration:r-dist};
+  }
+  return null;
+}
+function boxBox(A,B){
+  const aMin=A.pos.sub(A.halfSize),aMax=A.pos.add(A.halfSize);
+  const bMin=B.pos.sub(B.halfSize),bMax=B.pos.add(B.halfSize);
+  if(aMin.x>bMax.x||aMax.x<bMin.x||
+     aMin.y>bMax.y||aMax.y<bMin.y||
+     aMin.z>bMax.z||aMax.z<bMin.z)return null;
+  const penX=Math.min(aMax.x-bMin.x,bMax.x-aMin.x);
+  const penY=Math.min(aMax.y-bMin.y,bMax.y-aMin.y);
+  const penZ=Math.min(aMax.z-bMin.z,bMax.z-aMin.z);
+  const minPen=Math.min(penX,penY,penZ);
+  let normal;
+  if(minPen===penX)normal=new V3(A.pos.x<B.pos.x?-1:1,0,0);
+  else if(minPen===penY)normal=new V3(0,A.pos.y<B.pos.y?-1:1,0);
+  else normal=new V3(0,0,A.pos.z<B.pos.z?-1:1);
+  return {A,B,normal,penetration:minPen};
+}
+
+/* =============== WORLD =============== */
+class World{
+  constructor(){this.bodies=[];this.gravity=new V3(0,-9.8,0);this.dt=1/60;}
+  step(){
+    // integrate
+    for(const b of this.bodies){
+      if(b.invMass===0)continue;
+      b.vel=b.vel.add(this.gravity.mul(this.dt));
+      b.pos=b.pos.add(b.vel.mul(this.dt));
+    }
+    // detect contacts
+    const contacts=[];
+    for(let i=0;i<this.bodies.length;i++){
+      const A=this.bodies[i];
+      for(let j=i+1;j<this.bodies.length;j++){
+        const B=this.bodies[j];
+        if(A.invMass===0&&B.invMass===0)continue;
+        let c=null;
+        if(A.type==='sphere'&&B.type==='sphere')c=sphereSphere(A,B);
+        else if(A.type==='sphere'&&B.type==='box')c=sphereBox(A,B);
+        else if(A.type==='box'&&B.type==='sphere'){c=sphereBox(B,A);
+          if(c){c.normal=c.normal.mul(-1);[c.A,c.B]=[c.B,c.A];}}
+        else if(A.type==='box'&&B.type==='box')c=boxBox(A,B);
+        if(c)contacts.push(c);
+      }
+    }
+    // ground plane collisions
+    const groundY=-4;
+    for(const b of this.bodies){
+      if(b.invMass===0)continue;
+      let bottom=(b.type==='sphere')?(b.pos.y-b.radius):(b.pos.y-b.halfSize.y);
+      if(bottom<groundY){
+        b.pos.y+=groundY-bottom;
+        if(b.vel.y<0)b.vel.y*=-b.restitution;
+      }
+    }
+    // resolve contacts
+    for(const c of contacts){
+      this.resolve(c);
+    }
+  }
+  resolve(c){
+    const A=c.A,B=c.B,n=c.normal;
+    const rv=B.vel.sub(A.vel);
+    const velAlongNormal=rv.dot(n);
+    if(velAlongNormal>0)return;
+    const e=Math.min(A.restitution,B.restitution);
+    const j=-(1+e)*velAlongNormal/(A.invMass+B.invMass);
+    const impulse=n.mul(j);
+    if(A.invMass>0)A.vel=A.vel.sub(impulse.mul(A.invMass));
+    if(B.invMass>0)B.vel=B.vel.add(impulse.mul(B.invMass));
+    // positional correction
+    const percent=0.8,slop=0.01,total=A.invMass+B.invMass;
+    const correction=n.mul(Math.max(c.penetration-slop,0)*percent/total);
+    if(A.invMass>0)A.pos=A.pos.sub(correction.mul(A.invMass));
+    if(B.invMass>0)B.pos=B.pos.add(correction.mul(B.invMass));
+  }
+}
+
+/* =============== WEBGL RENDERING =============== */
+const gl=glcanvas.getContext('webgl',{antialias:true});
+if(!gl){alert("WebGL non supporté");throw'no gl';}
+function resize(){glcanvas.width=innerWidth*devicePixelRatio;glcanvas.height=innerHeight*devicePixelRatio;gl.viewport(0,0,glcanvas.width,glcanvas.height);}
+addEventListener('resize',resize);resize();
+
+const vs=`attribute vec3 aPos;attribute vec3 aNormal;
+uniform mat4 uMVP,uModel;varying vec3 vN,vP;
+void main(){vN=mat3(uModel)*aNormal;vP=(uModel*vec4(aPos,1.)).xyz;gl_Position=uMVP*vec4(aPos,1.);} `;
+const fs=`precision mediump float;varying vec3 vN,vP;
+uniform vec3 uColor,uLight;void main(){
+ vec3 N=normalize(vN);vec3 L=normalize(uLight-vP);
+ float diff=max(dot(N,L),0.0);
+ vec3 c=uColor*(0.5+1.0*diff);
+ gl_FragColor=vec4(c,1.0);} `;
+function compile(src,t){const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);
+ if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s;}
+const prog=gl.createProgram();
+gl.attachShader(prog,compile(vs,gl.VERTEX_SHADER));
+gl.attachShader(prog,compile(fs,gl.FRAGMENT_SHADER));
+gl.linkProgram(prog);gl.useProgram(prog);
+const loc={pos:gl.getAttribLocation(prog,'aPos'),norm:gl.getAttribLocation(prog,'aNormal'),
+mvp:gl.getUniformLocation(prog,'uMVP'),model:gl.getUniformLocation(prog,'uModel'),
+col:gl.getUniformLocation(prog,'uColor'),light:gl.getUniformLocation(prog,'uLight')};
+
+/* GEOMETRIES */
+function makeSphere(lat=20,longs=20){
+  const pos=[],norm=[];
+  for(let i=0;i<=lat;i++){
+    const th=i*Math.PI/lat;
+    for(let j=0;j<=longs;j++){
+      const ph=j*2*Math.PI/longs;
+      const x=Math.sin(th)*Math.cos(ph),y=Math.cos(th),z=Math.sin(th)*Math.sin(ph);
+      pos.push(x,y,z);norm.push(x,y,z);
+    }
+  }
+  const idx=[];
+  for(let i=0;i<lat;i++)
+    for(let j=0;j<longs;j++){
+      const a=i*(longs+1)+j,b=a+longs+1;
+      idx.push(a,b,a+1,b,b+1,a+1);
+    }
+  const verts=[];
+  for(const k of idx)
+    verts.push(pos[3*k],pos[3*k+1],pos[3*k+2],norm[3*k],norm[3*k+1],norm[3*k+2]);
+  return new Float32Array(verts);
+}
+function makeCube(){
+  const v=[1,-1,-1,1,0,0,1,-1,1,1,0,0,1,1,1,1,0,0,1,-1,-1,1,0,0,1,1,1,1,0,0,1,1,-1,1,0,0,
+  -1,-1,-1,-1,0,0,-1,1,-1,-1,0,0,-1,1,1,-1,0,0,-1,-1,-1,-1,0,0,-1,1,-1,-1,0,0,-1,-1,1,-1,0,0,
+  -1,1,-1,0,1,0,1,1,-1,0,1,0,1,1,1,0,1,0,-1,1,-1,0,1,0,1,1,1,0,1,0,-1,1,1,0,1,0,
+  -1,-1,-1,0,-1,0,-1,-1,1,0,-1,0,1,-1,1,0,-1,0,-1,-1,-1,0,-1,0,1,-1,1,0,-1,0,1,-1,-1,0,-1,0,
+  -1,-1,1,0,0,1,-1,1,1,0,0,1,1,1,1,0,0,1,-1,-1,1,0,0,1,1,1,1,0,0,1,1,-1,1,0,0,1,
+  -1,-1,-1,0,0,-1,1,-1,-1,0,0,-1,1,1,-1,0,0,-1,-1,-1,-1,0,0,-1,1,1,-1,0,0,-1,-1,1,-1,0,0,-1];
+  return new Float32Array(v);
+}
+function makeBuf(data){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);
+ gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);return{b,count:data.length/6};}
+const sphereBuf=makeBuf(makeSphere()),cubeBuf=makeBuf(makeCube());
+
+/* MATRICES */
+function mult(A,B){const o=new Float32Array(16);
+ for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=A[r]*B[c*4]+A[4+r]*B[c*4+1]+A[8+r]*B[c*4+2]+A[12+r]*B[c*4+3];
+ return o;}
+function id(){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);}
+function T(x,y,z){const m=id();m[12]=x;m[13]=y;m[14]=z;return m;}
+function S(x,y,z){const m=id();m[0]=x;m[5]=y;m[10]=z;return m;}
+function perspective(f,a,n,f2){const t=1/Math.tan(f/2),nf=1/(n-f2);
+ const m=new Float32Array(16);m[0]=t/a;m[5]=t;m[10]=(f2+n)*nf;m[11]=-1;m[14]=2*f2*n*nf;return m;}
+function lookAt(e,c,u){const f=c.sub(e).norm(),s=f.cross(u.norm()).norm(),v=s.cross(f);
+ const m=id();m[0]=s.x;m[1]=v.x;m[2]=-f.x;m[4]=s.y;m[5]=v.y;m[6]=-f.y;m[8]=s.z;m[9]=v.z;m[10]=-f.z;
+ m[12]=-s.dot(e);m[13]=-v.dot(e);m[14]=f.dot(e);return m;}
+
+/* CAMERA */
+let cam={theta:Math.PI/4,phi:Math.PI/5,dist:18};
+let drag=false,px=0,py=0;
+glcanvas.onmousedown=e=>{drag=true;px=e.clientX;py=e.clientY;};
+onmouseup=()=>drag=false;
+onmousemove=e=>{
+  if(!drag)return;
+  cam.theta-=(e.clientX-px)*0.01;
+  cam.phi=Math.max(0.05,Math.min(Math.PI/2-0.05,cam.phi-(e.clientY-py)*0.01));
+  px=e.clientX;py=e.clientY;
+};
+glcanvas.onwheel=e=>{cam.dist*=1+e.deltaY*0.001;cam.dist=Math.max(4,Math.min(40,cam.dist));};
+
+/* =============== SCENE =============== */
+const world=new World();
+const groundY=-4;
+
+function spawn(){
+  world.bodies=[];
+  const count=10;
+  for(let i=0;i<count;i++){
+    const pos=new V3(
+      (Math.random()-0.5)*6,
+      2+Math.random()*3,
+      (Math.random()-0.5)*6
+    );
+    if(Math.random()<0.5)
+      world.bodies.push(new Body({type:'sphere',pos:pos,radius:0.4+Math.random()*0.3}));
+    else
+      world.bodies.push(new Body({type:'box',pos:pos,halfSize:new V3(0.5,0.5,0.5)}));
+  }
+}
+spawn();
+addSphere.onclick=()=>world.bodies.push(new Body({type:'sphere',pos:new V3((Math.random()-0.5)*4,5,(Math.random()-0.5)*4)}));
+addBox.onclick=()=>world.bodies.push(new Body({type:'box',pos:new V3((Math.random()-0.5)*4,5,(Math.random()-0.5)*4)}));
+reset.onclick=spawn;
+
+/* =============== LOOP =============== */
+function loop(){
+  world.step();
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function draw(){
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(0.9,0.94,0.98,1);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  const eye=new V3(cam.dist*Math.cos(cam.theta)*Math.sin(cam.phi),
+                   cam.dist*Math.cos(cam.phi),
+                   cam.dist*Math.sin(cam.theta)*Math.sin(cam.phi));
+  const view=lookAt(eye,new V3(0,0,0),new V3(0,1,0));
+  const proj=perspective(Math.PI/3,glcanvas.width/glcanvas.height,0.1,200);
+  const vp=mult(proj,view);
+  gl.uniform3fv(loc.light,new Float32Array([eye.x,eye.y,eye.z]));
+
+  // sol
+  const M=mult(T(0,groundY-1,0),S(15,1,15));
+  const MVP=mult(vp,M);
+  gl.uniformMatrix4fv(loc.mvp,false,MVP);
+  gl.uniformMatrix4fv(loc.model,false,M);
+  gl.uniform3fv(loc.col,new Float32Array([0.85,0.87,0.9]));
+  gl.bindBuffer(gl.ARRAY_BUFFER,cubeBuf.b);
+  gl.vertexAttribPointer(loc.pos,3,gl.FLOAT,false,24,0);
+  gl.enableVertexAttribArray(loc.pos);
+  gl.vertexAttribPointer(loc.norm,3,gl.FLOAT,false,24,12);
+  gl.enableVertexAttribArray(loc.norm);
+  gl.drawArrays(gl.TRIANGLES,0,cubeBuf.count);
+
+  // objets
+  for(const b of world.bodies){
+    const Tm=T(b.pos.x,b.pos.y,b.pos.z);
+    const Sm=(b.type==='sphere')?S(b.radius,b.radius,b.radius):S(b.halfSize.x,b.halfSize.y,b.halfSize.z);
+    const model=mult(Tm,Sm);
+    const mvp=mult(vp,model);
+    gl.uniformMatrix4fv(loc.mvp,false,mvp);
+    gl.uniformMatrix4fv(loc.model,false,model);
+    gl.uniform3fv(loc.col,new Float32Array(b.color));
+    const buf=b.type==='sphere'?sphereBuf:cubeBuf;
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf.b);
+    gl.vertexAttribPointer(loc.pos,3,gl.FLOAT,false,24,0);
+    gl.enableVertexAttribArray(loc.pos);
+    gl.vertexAttribPointer(loc.norm,3,gl.FLOAT,false,24,12);
+    gl.enableVertexAttribArray(loc.norm);
+    gl.drawArrays(gl.TRIANGLES,0,buf.count);
+  }
+}
+</script>
+</body>
+</html>
+
